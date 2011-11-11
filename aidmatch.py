@@ -7,7 +7,14 @@ import sys
 API_KEY = 'cSpUJKpD'
 
 def aidmatch(filename):
-    rid, title, artist = acoustid.match(API_KEY, filename)
+    try:
+        rid, title, artist = acoustid.match(API_KEY, filename)
+    except acoustid.FingerprintGenerationError:
+        print >>sys.stderr, "fingerprint could not be calculated"
+        sys.exit(1)
+    except acoustid.WebServiceError:
+        print >>sys.stderr, "web service request failed"
+        sys.exit(1)
     print '%s - %s' % (artist, title)
     print 'http://musicbrainz.org/recording/%s' % rid
 

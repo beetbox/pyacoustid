@@ -9,19 +9,44 @@ API_BASE_URL = 'http://api.acoustid.org/v2/'
 LOOKUP_URL = API_BASE_URL + 'lookup'
 DEFAULT_META = 'recordings'
 
-class WebServiceError(Exception):
+class AcoustidError(Exception):
+    """Base for exceptions in this module."""
+
+class FingerprintGenerationError(AcoustidError):
+    """The audio could not be fingerprinted."""
+
+class WebServiceError(AcoustidError):
     """The Web service request failed."""
+
+def _api_request(url):
+    """Makes a GET request for the URL and returns a parsed JSON
+    response. May raise a WebServiceError if the request fails.
+    """
+    try:
+        with contextlib.closing(urllib.urlopen(url)) as f:
+            rawdata = f.read()
+    except IOError:
+        raise WebServiceError('ID query failed')
+
+    try:
+        return json.loads(rawdata)
+    except ValueError:
+        raise WebServiceError('response is not valid JSON')
 
 def fingerprint(samplerate, channels, pcmiter):
     """Fingerprint audio data given its sample rate and number of
     channels.  pcmiter should be an iterable containing blocks of PCM
-    data as byte strings.
+    data as byte strings. Raises a FingerprintGenerationError if
+    anything goes wrong.
     """
-    fper = libchroma.Fingerprinter()
-    fper.start(samplerate, channels)
-    for block in pcmiter:
-        fper.feed(block)
-    return fper.finish()
+    try:
+        fper = libchroma.Fingerprinter()
+        fper.start(samplerate, channels)
+        for block in pcmiter:
+            fper.feed(block)
+        return fper.finish()
+    except libchroma.FingerprintError:
+        raise FingerprintGenerationError("fingerprint calculation failed")
 
 def lookup(apikey, fingerprint, duration, meta=DEFAULT_META, url=LOOKUP_URL):
     """Look up a fingerprint with the Acoustid Web service. Returns the
@@ -35,9 +60,7 @@ def lookup(apikey, fingerprint, duration, meta=DEFAULT_META, url=LOOKUP_URL):
         'meta': meta,
     }
     req_url = '%s?%s' % (url, urllib.urlencode(params))
-    with contextlib.closing(urllib.urlopen(req_url)) as f:
-        data = json.load(f)
-    return data
+    return _api_request(req_url)
 
 def parse_lookup_result(data):
     """Given a parsed JSON response, return the MusicBrainz recording
@@ -66,8 +89,11 @@ def parse_lookup_result(data):
 def match(apikey, path, url=LOOKUP_URL):
     """Look up the metadata for an audio file."""
     path = os.path.abspath(os.path.expanduser(path))
-    with audioread.audio_open(path) as f:
-        duration = f.duration
-        fp = fingerprint(f.samplerate, f.channels, iter(f))
+    try:
+        with audioread.audio_open(path) as f:
+            duration = f.duration
+            fp = fingerprint(f.samplerate, f.channels, iter(f))
+    except audioread.DecodeError:
+        raise FingerprintGenerationError("audio could not be decoded")
     response = lookup(apikey, fp, duration, url=url)
     return parse_lookup_result(response)

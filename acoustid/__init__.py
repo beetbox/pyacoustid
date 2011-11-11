@@ -3,11 +3,14 @@ import json
 import urllib
 import contextlib
 import audioread
+import threading
+import time
 from . import libchroma
 
 API_BASE_URL = 'http://api.acoustid.org/v2/'
 LOOKUP_URL = API_BASE_URL + 'lookup'
 DEFAULT_META = 'recordings'
+REQUEST_INTERVAL = 0.33 # 3 requests/second.
 
 class AcoustidError(Exception):
     """Base for exceptions in this module."""
@@ -18,6 +21,31 @@ class FingerprintGenerationError(AcoustidError):
 class WebServiceError(AcoustidError):
     """The Web service request failed."""
 
+class _rate_limit(object):
+    """A decorator that limits the rate at which the function may be
+    called.  The rate is controlled by the REQUEST_INTERVAL module-level
+    constant; set the value to zero to disable rate limiting. The
+    limiting is thread-safe; only one thread may be in the function at a
+    time (acts like a monitor in this sense).
+    """
+    def __init__(self, fun):
+        self.fun = fun
+        self.last_call = 0.0
+        self.lock = threading.Lock()
+
+    def __call__(self, *args, **kwargs):
+        with self.lock:
+            # Wait until request_rate time has passed since last_call,
+            # then update last_call.
+            since_last_call = time.time() - self.last_call
+            if since_last_call < REQUEST_INTERVAL:
+                time.sleep(REQUEST_INTERVAL - since_last_call)
+            self.last_call = time.time()
+
+            # Call the original function.
+            return self.fun(*args, **kwargs)
+
+@_rate_limit
 def _api_request(url):
     """Makes a GET request for the URL and returns a parsed JSON
     response. May raise a WebServiceError if the request fails.

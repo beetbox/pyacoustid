@@ -37,12 +37,12 @@ already have decoded audio.
 Running
 -------
 
-You can run the included demo script, ``aidmatch.py``, to test your
+You can run the included demonstration script, ``aidmatch.py``, to test your
 installation::
 
-    $ lastmatch.py mysterious_music.mp3
+    $ python aidmatch.py mysterious_music.mp3
 
-This will show metadata matches from Last.fm's database. The script uses
+This will show the top metadata match from Acoustid's database. The script uses
 `audioread`_ to decode music, so it should transparently use a media library
 available on your system (GStreamer, FFmpeg, MAD, or Core Audio on Mac OS X).
 

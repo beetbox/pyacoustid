@@ -70,14 +70,20 @@ def _compress(data):
         f.write(data)
     return sio.getvalue()
 
+def _decompress(data):
+    """Decompress a gzip archive contained in a string."""
+    sio = StringIO(data)
+    with contextlib.closing(gzip.GzipFile(fileobj=sio)) as f:
+        return f.read()
+
 @_rate_limit
 def _send_request(req):
-    """Given a urllib2 Request object, make the request and return the
-    resulting raw data.
+    """Given a urllib2 Request object, make the request and return a
+    tuple containing the response data and headers.
     """
     try:
         with contextlib.closing(urllib2.urlopen(req)) as f:
-            return f.read()
+            return f.read(), f.info()
     except urllib2.HTTPError:
         raise WebServiceError('HTTP request error')
     except httplib.BadStatusLine:
@@ -91,11 +97,17 @@ def _api_request(url, params):
     the request fails.
     """
     body = _compress(urllib.urlencode(params))
-    req = urllib2.Request(url, body, {'Content-Encoding': 'gzip'})
-    rawdata = _send_request(req)
+    req = urllib2.Request(url, body, {
+        'Content-Encoding': 'gzip',
+        'Accept-Encoding': 'gzip',
+    })
+
+    data, headers = _send_request(req)
+    if headers.get('Content-Encoding') == 'gzip':
+        data = _decompress(data)
 
     try:
-        return json.loads(rawdata)
+        return json.loads(data)
     except ValueError:
         raise WebServiceError('response is not valid JSON')
 

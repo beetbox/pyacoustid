@@ -15,10 +15,14 @@
 import os
 import json
 import urllib
+import urllib2
+import httplib
 import contextlib
 import audioread
 import threading
 import time
+import gzip
+from StringIO import StringIO
 from . import libchroma
 
 API_BASE_URL = 'http://api.acoustid.org/v2/'
@@ -59,16 +63,31 @@ class _rate_limit(object):
             # Call the original function.
             return self.fun(*args, **kwargs)
 
+def _compress(data):
+    """Compress a string to a gzip archive."""
+    sio = StringIO()
+    with contextlib.closing(gzip.GzipFile(fileobj=sio, mode='wb')) as f:
+        f.write(data)
+    return sio.getvalue()
+
 @_rate_limit
-def _api_request(url):
-    """Makes a GET request for the URL and returns a parsed JSON
-    response. May raise a WebServiceError if the request fails.
+def _api_request(url, params):
+    """Makes a GET request for the URL with the given form parameters
+    and returns a parsed JSON response. May raise a WebServiceError if
+    the request fails.
     """
+    body = urllib.urlencode(params)
+    body = _compress(body)
+    req = urllib2.Request(url, body, {'Content-Encoding': 'gzip'})
     try:
-        with contextlib.closing(urllib.urlopen(url)) as f:
+        with contextlib.closing(urllib2.urlopen(req)) as f:
             rawdata = f.read()
+    except urllib2.HTTPError:
+        raise WebServiceError('HTTP request error')
+    except httplib.BadStatusLine:
+        raise WebServiceError('bad HTTP status line')
     except IOError:
-        raise WebServiceError('ID query failed')
+        raise WebServiceError('query failed')
 
     try:
         return json.loads(rawdata)
@@ -101,8 +120,7 @@ def lookup(apikey, fingerprint, duration, meta=DEFAULT_META, url=LOOKUP_URL):
         'fingerprint': fingerprint,
         'meta': meta,
     }
-    req_url = '%s?%s' % (url, urllib.urlencode(params))
-    return _api_request(req_url)
+    return _api_request(url, params)
 
 def parse_lookup_result(data):
     """Given a parsed JSON response, return the MusicBrainz recording

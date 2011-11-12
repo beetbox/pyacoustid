@@ -29,6 +29,7 @@ API_BASE_URL = 'http://api.acoustid.org/v2/'
 LOOKUP_URL = API_BASE_URL + 'lookup'
 DEFAULT_META = 'recordings'
 REQUEST_INTERVAL = 0.33 # 3 requests/second.
+MAX_AUDIO_LENGTH = 120 # Seconds.
 
 class AcoustidError(Exception):
     """Base for exceptions in this module."""
@@ -117,11 +118,20 @@ def fingerprint(samplerate, channels, pcmiter):
     data as byte strings. Raises a FingerprintGenerationError if
     anything goes wrong.
     """
+    # Maximum number of samples to decode.
+    endposition = samplerate * MAX_AUDIO_LENGTH
+
     try:
         fper = libchroma.Fingerprinter()
         fper.start(samplerate, channels)
+
+        position = 0 # Samples of audio fed to the fingerprinter.
         for block in pcmiter:
             fper.feed(block)
+            position += len(block) // 2 # 2 bytes/sample.
+            if position >= endposition:
+                break
+
         return fper.finish()
     except libchroma.FingerprintError:
         raise FingerprintGenerationError("fingerprint calculation failed")

@@ -175,8 +175,12 @@ def parse_lookup_result(data):
 
     return score, recording['id'], recording['title'], artist_name
 
-def match(apikey, path, url=LOOKUP_URL):
-    """Look up the metadata for an audio file."""
+def match(apikey, path, meta=DEFAULT_META, url=LOOKUP_URL, parse=True):
+    """Look up the metadata for an audio file. If ``parse`` is true,
+    then ``parse_lookup_result`` is used to return a small tuple of
+    relevant information; otherwise, the full parsed JSON response is
+    returned.
+    """
     path = os.path.abspath(os.path.expanduser(path))
     try:
         with audioread.audio_open(path) as f:
@@ -184,5 +188,8 @@ def match(apikey, path, url=LOOKUP_URL):
             fp = fingerprint(f.samplerate, f.channels, iter(f))
     except audioread.DecodeError:
         raise FingerprintGenerationError("audio could not be decoded")
-    response = lookup(apikey, fp, duration, url=url)
-    return parse_lookup_result(response)
+    response = lookup(apikey, fp, duration, meta, url)
+    if parse:
+        return parse_lookup_result(response)
+    else:
+        return response

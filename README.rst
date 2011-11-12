@@ -84,6 +84,17 @@ server.
 .. _Web service documentation: http://acoustid.org/webservice
 
 
+Version History
+---------------
+
+0.2
+  Compress HTTP requests and responses.
+  Limit audio decoding to 120 seconds.
+
+0.1
+  Initial release.
+
+
 Credits
 -------
 

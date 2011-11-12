@@ -71,23 +71,28 @@ def _compress(data):
     return sio.getvalue()
 
 @_rate_limit
-def _api_request(url, params):
-    """Makes a GET request for the URL with the given form parameters
-    and returns a parsed JSON response. May raise a WebServiceError if
-    the request fails.
+def _send_request(req):
+    """Given a urllib2 Request object, make the request and return the
+    resulting raw data.
     """
-    body = urllib.urlencode(params)
-    body = _compress(body)
-    req = urllib2.Request(url, body, {'Content-Encoding': 'gzip'})
     try:
         with contextlib.closing(urllib2.urlopen(req)) as f:
-            rawdata = f.read()
+            return f.read()
     except urllib2.HTTPError:
         raise WebServiceError('HTTP request error')
     except httplib.BadStatusLine:
         raise WebServiceError('bad HTTP status line')
     except IOError:
-        raise WebServiceError('query failed')
+        raise WebServiceError('connection failed')
+
+def _api_request(url, params):
+    """Makes a GET request for the URL with the given form parameters
+    and returns a parsed JSON response. May raise a WebServiceError if
+    the request fails.
+    """
+    body = _compress(urllib.urlencode(params))
+    req = urllib2.Request(url, body, {'Content-Encoding': 'gzip'})
+    rawdata = _send_request(req)
 
     try:
         return json.loads(rawdata)

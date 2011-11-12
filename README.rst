@@ -54,7 +54,7 @@ The simplest way to use pyacoustid to identify audio files is to call the
 ``match`` function::
 
     >>> import acoustid
-    >>> recording_id, title, artist = acoustid.match(apikey, path)
+    >>> score, recording_id, title, artist = acoustid.match(apikey, path)
 
 This convenience function uses `audioread`_ to decode audio and parses the
 response for you, pulling out the most important track metadata. Everything
@@ -69,8 +69,8 @@ can use to perform parts of the process:
   is required, as is the length, in seconds, of the source audio. Returns a
   parsed JSON response.
 - ``parse_lookup_result(data)``: Given a parsed JSON response, return a tuple
-  containing the MusicBrainz recording ID, title, and artist name of the top
-  match.
+  containing the match score (a float between 0 and 1), the MusicBrainz
+  recording ID, title, and artist name of the top match.
 
 The module internally performs thread-safe API rate limiting to 3 queries per
 second whenever the Web API is called, in accordance with the `Web service
@@ -90,6 +90,7 @@ Version History
 0.2
   Compress HTTP requests and responses.
   Limit audio decoding to 120 seconds.
+  Return score from convenience function.
 
 0.1
   Initial release.

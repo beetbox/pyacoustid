@@ -150,16 +150,18 @@ def lookup(apikey, fingerprint, duration, meta=DEFAULT_META, url=LOOKUP_URL):
     return _api_request(url, params)
 
 def parse_lookup_result(data):
-    """Given a parsed JSON response, return the MusicBrainz recording
-    ID, the title of the recording, and the name of the recording's
-    first artist. (If an artist is not available, the last item is
-    None.) If the response is incomplete, raises a WebServiceError.
+    """Given a parsed JSON response, return a tuple containing the match
+    score, the MusicBrainz recording ID, the title of the recording, and
+    the name of the recording's first artist. (If an artist is not
+    available, the last item is None.) If the response is incomplete,
+    raises a WebServiceError.
     """
     if data['status'] != 'ok':
         raise WebServiceError("status: %s" % data['status'])
     if not data['results']:
         raise WebServiceError("no results returned")
     result = data['results'][0]
+    score = result['score']
     if not result['recordings']:
         raise WebServiceError("no MusicBrainz recording attached")
     recording = result['recordings'][0]
@@ -171,7 +173,7 @@ def parse_lookup_result(data):
     else:
         artist_name = None
 
-    return recording['id'], recording['title'], artist_name
+    return score, recording['id'], recording['title'], artist_name
 
 def match(apikey, path, url=LOOKUP_URL):
     """Look up the metadata for an audio file."""

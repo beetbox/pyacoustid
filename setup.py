@@ -17,7 +17,12 @@ from setuptools import setup
 
 def _read(fn):
     path = os.path.join(os.path.dirname(__file__), fn)
-    return open(path).read()
+    data = open(path).read().decode('utf8')
+    # Special case some Unicode characters; PyPI seems to only like ASCII.
+    data = data.replace(u'\xe1', u'a')
+    data = data.replace(u'\u0161', u's')
+    data = data.replace(u'\xfd', u'y')
+    return data
 
 setup(name='pyacoustid',
       version='0.1',

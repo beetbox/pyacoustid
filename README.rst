@@ -3,8 +3,8 @@ Chromaprint and Acoustid for Python
 
 `Chromaprint`_ and its associated `Acoustid`_ Web service make up a
 high-quality, open-source acoustic fingerprinting system. This package provides
-Python bindings for both the fingerprinting algorithm library, which is portable
-and written in C, and the Web service that provides fingerprint lookups.
+Python bindings for both the fingerprinting algorithm library, which is written
+in C but portable, and the Web service, which provides fingerprint lookups.
 
 .. _Chromaprint: http://acoustid.org/
 .. _Acoustid: http://acoustid.org/chromaprint
@@ -25,9 +25,9 @@ Then you can install this library from `PyPI`_ using `pip`_::
 
     $ pip install pyacoustid
 
-This library depends on `audioread`_ to do audio decoding (pip should
-automatically install this dependency), but it's not really necessary if you
-already have decoded audio.
+This library uses `audioread`_ to do audio decoding (pip should automatically
+install this dependency), but it's not really necessary if you already have
+decoded audio.
 
 .. _pip: http://www.pip-installer.org/
 .. _PyPI: http://pypi.python.org/
@@ -44,7 +44,7 @@ installation::
 
 This will show the top metadata match from Acoustid's database. The script uses
 `audioread`_ to decode music, so it should transparently use a media library
-available on your system (GStreamer, FFmpeg, MAD, or Core Audio on Mac OS X).
+available on your system (GStreamer, FFmpeg, MAD, or Core Audio).
 
 
 Using in Your Code
@@ -61,7 +61,7 @@ response for you, pulling out the most important track metadata. Everything
 happens in one fell swoop. There are also a number of "smaller" functions you
 can use to perform parts of the process:
 
-- ``fingerprint(samplerate, channels, pcmiter)``: Returns a fingerprint for raw
+- ``fingerprint(samplerate, channels, pcmiter)``: Generate a fingerprint for raw
   audio data. Specify the audio parameters and give an iterable containing
   blocks of PCM data.
 - ``lookup(apikey, fingerprint, duration)``: Make a request to the `Acoustid`_
@@ -72,8 +72,8 @@ can use to perform parts of the process:
   containing the MusicBrainz recording ID, title, and artist name of the top
   match.
 
-The module internally performs thread-safe API limiting to 3 queries per second
-whenever the Web API is called, in accordance with the `Web service
+The module internally performs thread-safe API rate limiting to 3 queries per
+second whenever the Web API is called, in accordance with the `Web service
 documentation`_.
 
 Calls to the library can raise ``AcoustidError`` exceptions of two subtypes:
@@ -98,13 +98,13 @@ Version History
 Credits
 -------
 
-This library is by `Adrian Sampson`_. Chromaprint and Acoustid are by `Lukáš
-Lalinský`__. These bindings include the original `ctypes`_-based bindings
-written by Lukáš. The library is made available under the MIT license.
+This library is by Adrian Sampson. Chromaprint and Acoustid are by `Lukáš
+Lalinský`__. This package includes the original `ctypes`_-based bindings
+written by Lukáš. The entire library is made available under the `MIT license`_.
 pyacoustid was written to be used with `beets`_, which you should probably check
 out.
 
 __ lukas_
 .. _ctypes: http://docs.python.org/library/ctypes.html
-.. _Adrian Sampson: mailto:adrian@radbox.org
 .. _beets: http://beets.radbox.org/
+.. _MIT license: http://www.opensource.org/licenses/mit-license.php

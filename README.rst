@@ -76,6 +76,9 @@ The module internally performs thread-safe API rate limiting to 3 queries per
 second whenever the Web API is called, in accordance with the `Web service
 documentation`_.
 
+If you're running your own Acoustid database server, you can set the base URL
+for all API calls with the ``set_base_url`` function.
+
 Calls to the library can raise ``AcoustidError`` exceptions of two subtypes:
 ``FingerprintGenerationError`` and ``WebServiceError``. Catch these exceptions
 if you want to proceed when audio can't be decoded or no match is found on the
@@ -86,6 +89,9 @@ server.
 
 Version History
 ---------------
+
+0.3
+  Configurable API base URL.
 
 0.2
   Compress HTTP requests and responses.

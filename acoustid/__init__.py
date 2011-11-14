@@ -77,16 +77,14 @@ def _decompress(data):
         return f.read()
 
 def set_base_url(url):
-    """Set the url of the server to query."""
+    """Set the URL of the API server to query."""
     if not url.endswith('/'):
         url += '/'
     global API_BASE_URL
     API_BASE_URL = url
 
 def get_lookup_url():
-    """Get the url to perform lookups to. By this is the
-    base url + 'lookup'
-    """
+    """Get the URL of the lookup API endpoint."""
     return API_BASE_URL + 'lookup'
 
 @_rate_limit
@@ -148,12 +146,10 @@ def fingerprint(samplerate, channels, pcmiter):
     except libchroma.FingerprintError:
         raise FingerprintGenerationError("fingerprint calculation failed")
 
-def lookup(apikey, fingerprint, duration, meta=DEFAULT_META, url=None):
+def lookup(apikey, fingerprint, duration, meta=DEFAULT_META):
     """Look up a fingerprint with the Acoustid Web service. Returns the
     Python object reflecting the response JSON data.
     """
-    if url is None:
-        url = get_lookup_url()
     params = {
         'format': 'json',
         'client': apikey,
@@ -161,7 +157,7 @@ def lookup(apikey, fingerprint, duration, meta=DEFAULT_META, url=None):
         'fingerprint': fingerprint,
         'meta': meta,
     }
-    return _api_request(url, params)
+    return _api_request(get_lookup_url(), params)
 
 def parse_lookup_result(data):
     """Given a parsed JSON response, return a tuple containing the match
@@ -189,22 +185,20 @@ def parse_lookup_result(data):
 
     return score, recording['id'], recording['title'], artist_name
 
-def match(apikey, path, meta=DEFAULT_META, url=None, parse=True):
+def match(apikey, path, meta=DEFAULT_META, parse=True):
     """Look up the metadata for an audio file. If ``parse`` is true,
     then ``parse_lookup_result`` is used to return a small tuple of
     relevant information; otherwise, the full parsed JSON response is
     returned.
     """
     path = os.path.abspath(os.path.expanduser(path))
-    if url is None:
-        url = get_lookup_url()
     try:
         with audioread.audio_open(path) as f:
             duration = f.duration
             fp = fingerprint(f.samplerate, f.channels, iter(f))
     except audioread.DecodeError:
         raise FingerprintGenerationError("audio could not be decoded")
-    response = lookup(apikey, fp, duration, meta, url)
+    response = lookup(apikey, fp, duration, meta)
     if parse:
         return parse_lookup_result(response)
     else:

@@ -160,7 +160,7 @@ def lookup(apikey, fingerprint, duration, meta=DEFAULT_META):
     return _api_request(get_lookup_url(), params)
 
 def parse_lookup_result(data):
-    """Given a parsed JSON response, return a tuple containing the match
+    """Given a parsed JSON response, generate tuples containing the match
     score, the MusicBrainz recording ID, the title of the recording, and
     the name of the recording's first artist. (If an artist is not
     available, the last item is None.) If the response is incomplete,
@@ -168,28 +168,30 @@ def parse_lookup_result(data):
     """
     if data['status'] != 'ok':
         raise WebServiceError("status: %s" % data['status'])
-    if not data['results']:
-        raise WebServiceError("no results returned")
-    result = data['results'][0]
-    score = result['score']
-    if not result['recordings']:
-        raise WebServiceError("no MusicBrainz recording attached")
-    recording = result['recordings'][0]
+    if 'results' not in data:
+        raise WebServiceError("results not included")
 
-    # Get the artist if available.
-    if recording['artists']:
-        artist = recording['artists'][0]
-        artist_name = artist['name']
-    else:
-        artist_name = None
+    for result in data['results']:
+        score = result['score']
+        if not result['recordings']:
+            # No recording attached. This result is not very useful.
+            continue
+        recording = result['recordings'][0]
 
-    return score, recording['id'], recording['title'], artist_name
+        # Get the artist if available.
+        if recording['artists']:
+            artist = recording['artists'][0]
+            artist_name = artist['name']
+        else:
+            artist_name = None
+
+        yield score, recording['id'], recording['title'], artist_name
 
 def match(apikey, path, meta=DEFAULT_META, parse=True):
     """Look up the metadata for an audio file. If ``parse`` is true,
-    then ``parse_lookup_result`` is used to return a small tuple of
-    relevant information; otherwise, the full parsed JSON response is
-    returned.
+    then ``parse_lookup_result`` is used to return an iterator over
+    small tuple of relevant information; otherwise, the full parsed JSON
+    response is returned.
     """
     path = os.path.abspath(os.path.expanduser(path))
     try:

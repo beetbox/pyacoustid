@@ -25,16 +25,23 @@ API_KEY = 'cSpUJKpD'
 
 def aidmatch(filename):
     try:
-        score, rid, title, artist = acoustid.match(API_KEY, filename)
+        results = acoustid.match(API_KEY, filename)
     except acoustid.FingerprintGenerationError:
         print >>sys.stderr, "fingerprint could not be calculated"
         sys.exit(1)
     except acoustid.WebServiceError:
         print >>sys.stderr, "web service request failed"
         sys.exit(1)
-    print '%s - %s' % (artist, title)
-    print 'http://musicbrainz.org/recording/%s' % rid
-    print 'Score: %i%%' % (int(score * 100))
+
+    first = True
+    for score, rid, title, artist in results:
+        if first:
+            first = False
+        else:
+            print
+        print '%s - %s' % (artist, title)
+        print 'http://musicbrainz.org/recording/%s' % rid
+        print 'Score: %i%%' % (int(score * 100))
 
 if __name__ == '__main__':
     aidmatch(sys.argv[1])

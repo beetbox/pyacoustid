@@ -26,7 +26,6 @@ from StringIO import StringIO
 from . import libchroma
 
 API_BASE_URL = 'http://api.acoustid.org/v2/'
-LOOKUP_URL = API_BASE_URL + 'lookup'
 DEFAULT_META = 'recordings'
 REQUEST_INTERVAL = 0.33 # 3 requests/second.
 MAX_AUDIO_LENGTH = 120 # Seconds.
@@ -76,6 +75,19 @@ def _decompress(data):
     sio = StringIO(data)
     with contextlib.closing(gzip.GzipFile(fileobj=sio)) as f:
         return f.read()
+
+def set_base_url(url):
+    """Set the url of the server to query."""
+    if not url.endswith('/'):
+        url += '/'
+    global API_BASE_URL
+    API_BASE_URL = url
+
+def get_lookup_url():
+    """Get the url to perform lookups to. By this is the
+    base url + 'lookup'
+    """
+    return API_BASE_URL + 'lookup'
 
 @_rate_limit
 def _send_request(req):
@@ -136,10 +148,12 @@ def fingerprint(samplerate, channels, pcmiter):
     except libchroma.FingerprintError:
         raise FingerprintGenerationError("fingerprint calculation failed")
 
-def lookup(apikey, fingerprint, duration, meta=DEFAULT_META, url=LOOKUP_URL):
+def lookup(apikey, fingerprint, duration, meta=DEFAULT_META, url=None):
     """Look up a fingerprint with the Acoustid Web service. Returns the
     Python object reflecting the response JSON data.
     """
+    if url is None:
+        url = get_lookup_url()
     params = {
         'format': 'json',
         'client': apikey,
@@ -175,13 +189,15 @@ def parse_lookup_result(data):
 
     return score, recording['id'], recording['title'], artist_name
 
-def match(apikey, path, meta=DEFAULT_META, url=LOOKUP_URL, parse=True):
+def match(apikey, path, meta=DEFAULT_META, url=None, parse=True):
     """Look up the metadata for an audio file. If ``parse`` is true,
     then ``parse_lookup_result`` is used to return a small tuple of
     relevant information; otherwise, the full parsed JSON response is
     returned.
     """
     path = os.path.abspath(os.path.expanduser(path))
+    if url is None:
+        url = get_lookup_url()
     try:
         with audioread.audio_open(path) as f:
             duration = f.duration

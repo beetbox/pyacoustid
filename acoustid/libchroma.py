@@ -15,6 +15,8 @@ def _guess_lib_name():
         return ('libchromaprint.0.dylib',)
     elif sys.platform == 'win32':
         return ('chromaprint.dll', 'libchromaprint.dll')
+    elif sys.platform == 'cygwin':
+        return ('libchromaprint.dll.a', 'cygchromaprint-0.dll')
     return ('libchromaprint.so.0',)
 
 for name in _guess_lib_name():

@@ -95,6 +95,7 @@ Version History
 0.3
   Configurable API base URL.
   Result parser now generates all results instead of returning just one.
+  Find the chromaprint library on Cygwin.
 
 0.2
   Compress HTTP requests and responses.

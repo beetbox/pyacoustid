@@ -23,7 +23,7 @@ import threading
 import time
 import gzip
 from StringIO import StringIO
-from . import libchroma
+import chromaprint
 
 API_BASE_URL = 'http://api.acoustid.org/v2/'
 DEFAULT_META = 'recordings'
@@ -132,7 +132,7 @@ def fingerprint(samplerate, channels, pcmiter):
     endposition = samplerate * MAX_AUDIO_LENGTH
 
     try:
-        fper = libchroma.Fingerprinter()
+        fper = chromaprint.Fingerprinter()
         fper.start(samplerate, channels)
 
         position = 0 # Samples of audio fed to the fingerprinter.
@@ -143,7 +143,7 @@ def fingerprint(samplerate, channels, pcmiter):
                 break
 
         return fper.finish()
-    except libchroma.FingerprintError:
+    except chromaprint.FingerprintError:
         raise FingerprintGenerationError("fingerprint calculation failed")
 
 def lookup(apikey, fingerprint, duration, meta=DEFAULT_META):

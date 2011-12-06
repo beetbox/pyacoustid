@@ -96,6 +96,7 @@ Version History
   Configurable API base URL.
   Result parser now generates all results instead of returning just one.
   Find the chromaprint library on Cygwin.
+  New module names: ``chromaprint`` and ``acoustid`` (no package).
 
 0.2
   Compress HTTP requests and responses.

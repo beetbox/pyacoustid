@@ -38,7 +38,10 @@ setup(name='pyacoustid',
 
       install_requires = ['audioread'],
 
-      packages=['acoustid'],
+      py_modules=[
+          'chromaprint',
+          'acoustid',
+      ],
 
       classifiers=[
           'Topic :: Multimedia :: Sound/Audio :: Conversion',

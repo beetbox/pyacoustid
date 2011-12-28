@@ -102,7 +102,13 @@ class Fingerprinter(object):
         ))
 
     def feed(self, data):
-        """Send raw PCM audio data to the fingerprinter."""
+        """Send raw PCM audio data to the fingerprinter. Data may be
+        either a bytestring or a buffer object.
+        """
+        if isinstance(data, buffer):
+            data = str(data)
+        elif not isinstance(data, str):
+            raise TypeError('data must be str or buffer')
         _check(_libchromaprint.chromaprint_feed(
             self._ctx, data, len(data) // 2
         ))

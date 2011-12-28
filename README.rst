@@ -92,6 +92,10 @@ server.
 Version History
 ---------------
 
+0.4
+  Data chunks can now be buffers as well as bytestrings (fixes compatibility
+  with pymad).
+
 0.3
   Configurable API base URL.
   Result parser now generates all results instead of returning just one.

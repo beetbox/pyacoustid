@@ -37,7 +37,31 @@ class FingerprintGenerationError(AcoustidError):
     """The audio could not be fingerprinted."""
 
 class WebServiceError(AcoustidError):
-    """The Web service request failed."""
+    """The Web service request failed. The field ``message`` contains a
+    description of the error. If this is an error that was specifically
+    sent by the acoustid server, then the ``code`` field contains the
+    acoustid error code.
+    """
+    def __init__(self, message, response=None):
+        """Create an error for the given HTTP response body, if
+        provided, with the ``message`` as a fallback.
+        """
+        if response:
+            # Try to parse the JSON error response.
+            try:
+                data = json.loads(response)
+            except ValueError:
+                pass
+            else:
+                if isinstance(data.get('error'), dict):
+                    error = data['error']
+                    if 'message' in error:
+                        message = error['message']
+                    if 'code' in error:
+                        self.code = error['code']
+
+        super(WebServiceError, self).__init__(message)
+        self.message = message
 
 class _rate_limit(object):
     """A decorator that limits the rate at which the function may be
@@ -95,8 +119,8 @@ def _send_request(req):
     try:
         with contextlib.closing(urllib2.urlopen(req)) as f:
             return f.read(), f.info()
-    except urllib2.HTTPError:
-        raise WebServiceError('HTTP request error')
+    except urllib2.HTTPError, exc:
+        raise WebServiceError('HTTP status %i' % exc.code, exc.read())
     except httplib.BadStatusLine:
         raise WebServiceError('bad HTTP status line')
     except IOError:

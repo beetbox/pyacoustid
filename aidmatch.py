@@ -29,8 +29,8 @@ def aidmatch(filename):
     except acoustid.FingerprintGenerationError:
         print >>sys.stderr, "fingerprint could not be calculated"
         sys.exit(1)
-    except acoustid.WebServiceError:
-        print >>sys.stderr, "web service request failed"
+    except acoustid.WebServiceError, exc:
+        print >>sys.stderr, "web service request failed:", exc.message
         sys.exit(1)
 
     first = True

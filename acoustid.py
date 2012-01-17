@@ -197,7 +197,7 @@ def parse_lookup_result(data):
 
     for result in data['results']:
         score = result['score']
-        if not result['recordings']:
+        if not result.get('recordings'):
             # No recording attached. This result is not very useful.
             continue
         recording = result['recordings'][0]

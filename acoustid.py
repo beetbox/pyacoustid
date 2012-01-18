@@ -236,16 +236,22 @@ def _fingerprint_file_fpcalc(path):
     try:
         output = subprocess.check_output(command)
     except (OSError, subprocess.CalledProcessError):
-        raise FingerprintGenerationError("fingerprint calculation failed")
+        raise FingerprintGenerationError("fpcalc invocation failed")
     duration = fp = None
     for line in output.splitlines():
-        parts = line.split('=', 1)
+        try:
+            parts = line.split('=', 1)
+        except ValueError:
+            raise FingerprintGenerationError("malformed fpcalc output")
         if parts[0] == 'DURATION':
-            duration = int(parts[1])
+            try:
+                duration = int(parts[1])
+            except ValueError:
+                raise FingerprintGenerationError("fpcalc duration not numeric")
         elif parts[0] == 'FINGERPRINT':
             fp = parts[1]
     if duration is None or fp is None:
-        raise FingerprintGenerationError("fingerprint calculation failed 2")
+        raise FingerprintGenerationError("missing fpcalc output")
     return duration, fp
 
 def match(apikey, path, meta=DEFAULT_META, parse=True):

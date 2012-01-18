@@ -16,10 +16,12 @@ Installation
 First, install the `Chromaprint`_ fingerprinting library by `Lukáš Lalinský`__.
 (The library itself depends on an FFT library, but it's smart enough to use an
 algorithm from software you probably already have installed; see the Chromaprint
-page for details.)
+page for details.) This module can use either the Chromaprint dynamic library or
+the ``fpcalc`` command-line tool, which itself depends on `libavcodec`_.
 
 __ lukas_
 .. _lukas: http://oxygene.sk/lukas/
+.. _libavcodec: http://ffmpeg.org/
 
 Then you can install this library from `PyPI`_ using `pip`_::
 
@@ -93,6 +95,9 @@ Version History
 ---------------
 
 0.4
+  Can now fall back to using the ``fpcalc`` command-line tool instead of the
+  Chromaprint dynamic library (so the library can be used with the binary
+  distributions).
   Data chunks can now be buffers as well as bytestrings (fixes compatibility
   with pymad).
 

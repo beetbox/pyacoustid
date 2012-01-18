@@ -38,6 +38,8 @@ API_BASE_URL = 'http://api.acoustid.org/v2/'
 DEFAULT_META = 'recordings'
 REQUEST_INTERVAL = 0.33 # 3 requests/second.
 MAX_AUDIO_LENGTH = 120 # Seconds.
+FPCALC_COMMAND = 'fpcalc'
+FPCALC_ENVVAR = 'FPCALC'
 
 class AcoustidError(Exception):
     """Base for exceptions in this module."""
@@ -232,11 +234,13 @@ def _fingerprint_file_audioread(path):
 
 def _fingerprint_file_fpcalc(path):
     """Fingerprint a file by calling the fpcalc application."""
-    command = ["fpcalc", "-length", str(MAX_AUDIO_LENGTH), path]
+    fpcalc = os.environ.get(FPCALC_ENVVAR, FPCALC_COMMAND)
+    command = [fpcalc, "-length", str(MAX_AUDIO_LENGTH), path]
     try:
         output = subprocess.check_output(command)
     except (OSError, subprocess.CalledProcessError):
         raise FingerprintGenerationError("fpcalc invocation failed")
+
     duration = fp = None
     for line in output.splitlines():
         try:
@@ -250,6 +254,7 @@ def _fingerprint_file_fpcalc(path):
                 raise FingerprintGenerationError("fpcalc duration not numeric")
         elif parts[0] == 'FINGERPRINT':
             fp = parts[1]
+
     if duration is None or fp is None:
         raise FingerprintGenerationError("missing fpcalc output")
     return duration, fp

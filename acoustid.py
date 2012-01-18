@@ -18,12 +18,21 @@ import urllib
 import urllib2
 import httplib
 import contextlib
-import audioread
+try:
+    import audioread
+    have_audioread = True
+except ImportError:
+    have_audioread = False
+try:
+    import chromaprint
+    have_chromaprint = True
+except ImportError:
+    have_chromaprint = False
+import subprocess
 import threading
 import time
 import gzip
 from StringIO import StringIO
-import chromaprint
 
 API_BASE_URL = 'http://api.acoustid.org/v2/'
 DEFAULT_META = 'recordings'
@@ -211,6 +220,34 @@ def parse_lookup_result(data):
 
         yield score, recording['id'], recording['title'], artist_name
 
+def _fingerprint_file_audioread(path):
+    """Fingerprint a file by using audioread and chromaprint."""
+    try:
+        with audioread.audio_open(path) as f:
+            duration = f.duration
+            fp = fingerprint(f.samplerate, f.channels, iter(f))
+    except audioread.DecodeError:
+        raise FingerprintGenerationError("audio could not be decoded")
+    return duration, fp
+
+def _fingerprint_file_fpcalc(path):
+    """Fingerprint a file by calling the fpcalc application."""
+    command = ["fpcalc", "-length", str(MAX_AUDIO_LENGTH), path]
+    try:
+        output = subprocess.check_output(command)
+    except (OSError, subprocess.CalledProcessError):
+        raise FingerprintGenerationError("fingerprint calculation failed")
+    duration = fp = None
+    for line in output.splitlines():
+        parts = line.split('=', 1)
+        if parts[0] == 'DURATION':
+            duration = int(parts[1])
+        elif parts[0] == 'FINGERPRINT':
+            fp = parts[1]
+    if duration is None or fp is None:
+        raise FingerprintGenerationError("fingerprint calculation failed 2")
+    return duration, fp
+
 def match(apikey, path, meta=DEFAULT_META, parse=True):
     """Look up the metadata for an audio file. If ``parse`` is true,
     then ``parse_lookup_result`` is used to return an iterator over
@@ -218,12 +255,10 @@ def match(apikey, path, meta=DEFAULT_META, parse=True):
     response is returned.
     """
     path = os.path.abspath(os.path.expanduser(path))
-    try:
-        with audioread.audio_open(path) as f:
-            duration = f.duration
-            fp = fingerprint(f.samplerate, f.channels, iter(f))
-    except audioread.DecodeError:
-        raise FingerprintGenerationError("audio could not be decoded")
+    if have_audioread and have_chromaprint:
+        duration, fp = _fingerprint_file_audioread(path)
+    else:
+        duration, fp = _fingerprint_file_fpcalc(path)
     response = lookup(apikey, fp, duration, meta)
     if parse:
         return parse_lookup_result(response)

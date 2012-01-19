@@ -8,7 +8,7 @@
 # distribute, sublicense, and/or sell copies of the Software, and to
 # permit persons to whom the Software is furnished to do so, subject to
 # the following conditions:
-# 
+#
 # The above copyright notice and this permission notice shall be
 # included in all copies or substantial portions of the Software.
 
@@ -46,6 +46,9 @@ class AcoustidError(Exception):
 
 class FingerprintGenerationError(AcoustidError):
     """The audio could not be fingerprinted."""
+
+class SubmitFingerprintError(AcoustidError):
+    """Missing data for a fingerprint submission."""
 
 class WebServiceError(AcoustidError):
     """The Web service request failed. The field ``message`` contains a
@@ -118,12 +121,18 @@ def set_base_url(url):
     global API_BASE_URL
     API_BASE_URL = url
 
-def get_lookup_url():
-    """Get the URL of the lookup API endpoint."""
+def _get_lookup_url():
+    """Get the url to perform lookups to. By this is the
+    base url + 'lookup'
+    """
     return API_BASE_URL + 'lookup'
 
+def _get_submit_url():
+    """The url to send submissions to"""
+    return API_BASE_URL + 'submit'
+
 @_rate_limit
-def _send_request(req):
+def _send_request(req, data=None):
     """Given a urllib2 Request object, make the request and return a
     tuple containing the response data and headers.
     """
@@ -137,18 +146,23 @@ def _send_request(req):
     except IOError:
         raise WebServiceError('connection failed')
 
-def _api_request(url, params):
+def _api_request(url, params, type="GET"):
     """Makes a GET request for the URL with the given form parameters
     and returns a parsed JSON response. May raise a WebServiceError if
     the request fails.
     """
     body = _compress(urllib.urlencode(params))
-    req = urllib2.Request(url, body, {
+    headers = {
         'Content-Encoding': 'gzip',
         'Accept-Encoding': 'gzip',
-    })
+    }
+    req = urllib2.Request(url, body, headers)
+    postreq = urllib2.Request(url, headers=headers)
 
-    data, headers = _send_request(req)
+    if type == "GET":
+        data, headers = _send_request(req)
+    elif type == "POST":
+        data, headers = _send_request(postreq, body)
     if headers.get('Content-Encoding') == 'gzip':
         data = _decompress(data)
 
@@ -192,7 +206,7 @@ def lookup(apikey, fingerprint, duration, meta=DEFAULT_META):
         'fingerprint': fingerprint,
         'meta': meta,
     }
-    return _api_request(get_lookup_url(), params)
+    return _api_request(_get_lookup_url(), params)
 
 def parse_lookup_result(data):
     """Given a parsed JSON response, generate tuples containing the match
@@ -275,3 +289,27 @@ def match(apikey, path, meta=DEFAULT_META, parse=True):
         return parse_lookup_result(response)
     else:
         return response
+
+def submit(userkey, clientkey, data):
+    """Perform a fingerprint submission to an acoustid server.
+    ``userkey`` is a user's access key and ``clientkey`` is the
+    key for a registered application on the server.
+    ``data`` is a dictionary containing the data to submit or
+    a list of dictionaries to submit more than 1 fingerprint.
+    Required keys are 'fingerprint' and 'duration'. Optional keys
+    to add more metadata are puid, mbid, track, artist, album,
+    albumartist, year trackno, discno, fileformat, bitrate
+    """
+    if isinstance(data, dict):
+        data = [data]
+    url = _get_submit_url()
+    args = {}
+    args["client"] = clientkey
+    args["user"] = userkey
+    for i,d in enumerate(data):
+        if "duration" not in d and "fingerprint" not in d:
+            raise SubmitFingerprintError("Missing required parameters")
+        for k,v in d.iteritems():
+            args["%s.%s" % (k, i)] = v
+    return _api_request(url, args)
+

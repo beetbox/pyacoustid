@@ -1,5 +1,5 @@
 # This file is part of pyacoustid.
-# Copyright 2011, Adrian Sampson.
+# Copyright 2012, Adrian Sampson.
 #
 # Permission is hereby granted, free of charge, to any person obtaining
 # a copy of this software and associated documentation files (the
@@ -8,7 +8,7 @@
 # distribute, sublicense, and/or sell copies of the Software, and to
 # permit persons to whom the Software is furnished to do so, subject to
 # the following conditions:
-#
+# 
 # The above copyright notice and this permission notice shall be
 # included in all copies or substantial portions of the Software.
 
@@ -47,8 +47,8 @@ class AcoustidError(Exception):
 class FingerprintGenerationError(AcoustidError):
     """The audio could not be fingerprinted."""
 
-class SubmitFingerprintError(AcoustidError):
-    """Missing data for a fingerprint submission."""
+class FingerprintSubmissionError(AcoustidError):
+    """Missing required data for a fingerprint submission."""
 
 class WebServiceError(AcoustidError):
     """The Web service request failed. The field ``message`` contains a
@@ -122,17 +122,15 @@ def set_base_url(url):
     API_BASE_URL = url
 
 def _get_lookup_url():
-    """Get the url to perform lookups to. By this is the
-    base url + 'lookup'
-    """
+    """Get the URL of the lookup API endpoint."""
     return API_BASE_URL + 'lookup'
 
 def _get_submit_url():
-    """The url to send submissions to"""
+    """Get the URL of the submission API endpoint."""
     return API_BASE_URL + 'submit'
 
 @_rate_limit
-def _send_request(req, data=None):
+def _send_request(req):
     """Given a urllib2 Request object, make the request and return a
     tuple containing the response data and headers.
     """
@@ -146,23 +144,18 @@ def _send_request(req, data=None):
     except IOError:
         raise WebServiceError('connection failed')
 
-def _api_request(url, params, type="GET"):
-    """Makes a GET request for the URL with the given form parameters
-    and returns a parsed JSON response. May raise a WebServiceError if
-    the request fails.
+def _api_request(url, params):
+    """Makes a POST request for the URL with the given form parameters,
+    which are encoded as compressed form data, and returns a parsed JSON
+    response. May raise a WebServiceError if the request fails.
     """
     body = _compress(urllib.urlencode(params))
-    headers = {
+    req = urllib2.Request(url, body, {
         'Content-Encoding': 'gzip',
         'Accept-Encoding': 'gzip',
-    }
-    req = urllib2.Request(url, body, headers)
-    postreq = urllib2.Request(url, headers=headers)
+    })
 
-    if type == "GET":
-        data, headers = _send_request(req)
-    elif type == "POST":
-        data, headers = _send_request(postreq, body)
+    data, headers = _send_request(req)
     if headers.get('Content-Encoding') == 'gzip':
         data = _decompress(data)
 
@@ -290,26 +283,38 @@ def match(apikey, path, meta=DEFAULT_META, parse=True):
     else:
         return response
 
-def submit(userkey, clientkey, data):
-    """Perform a fingerprint submission to an acoustid server.
-    ``userkey`` is a user's access key and ``clientkey`` is the
-    key for a registered application on the server.
-    ``data`` is a dictionary containing the data to submit or
-    a list of dictionaries to submit more than 1 fingerprint.
-    Required keys are 'fingerprint' and 'duration'. Optional keys
-    to add more metadata are puid, mbid, track, artist, album,
-    albumartist, year trackno, discno, fileformat, bitrate
+def submit(apikey, userkey, data):
+    """Submit a fingerprint to the acoustid server. The ``apikey`` and
+    ``userkey`` parameters are API keys for the application and the
+    submitting user, respectively.
+
+    ``data`` may be either a single dictionary or a list of
+    dictionaries. In either case, each dictionary must contain a
+    ``fingerprint`` key and a ``duration`` key and may include the
+    following: ``puid``, ``mbid``, ``track``, ``artist``, ``album``,
+    ``albumartist``, ``year``, ``trackno``, ``discno``, ``fileformat``,
+    ``bitrate``
+
+    If the required keys are not present in a dictionary, a
+    FingerprintSubmissionError is raised.
     """
     if isinstance(data, dict):
         data = [data]
-    url = _get_submit_url()
-    args = {}
-    args["client"] = clientkey
-    args["user"] = userkey
-    for i,d in enumerate(data):
-        if "duration" not in d and "fingerprint" not in d:
-            raise SubmitFingerprintError("Missing required parameters")
-        for k,v in d.iteritems():
-            args["%s.%s" % (k, i)] = v
-    return _api_request(url, args)
 
+    args = {
+        'format': 'json',
+        'client': apikey,
+        'user': userkey,
+    }
+
+    # Build up "field.#" parameters corresponding to the parameters
+    # given in each dictionary.
+    for i, d in enumerate(data):
+        if "duration" not in d or "fingerprint" not in d:
+            raise FingerprintSubmissionError("missing required parameters")
+        for k, v in d.iteritems():
+            args["%s.%s" % (k, i)] = v
+
+    response = _api_request(_get_submit_url(), args)
+    if response['status'] != 'ok':
+        raise WebServiceError("status: %s" % data['status'])

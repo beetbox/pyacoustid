@@ -98,8 +98,9 @@ Version History
 
 0.4
   Fingerprinting can now fall back to using the ``fpcalc`` command-line tool
-  instead of the Chromaprint dynamic library (so the library can be used with
-  the binary distributions).
+  instead of the Chromaprint dynamic library so the library can be used with
+  the binary distributions (thanks to Lukáš Lalinský).
+  Fingerprint submission (thanks to Alastair Porter).
   Data chunks can now be buffers as well as bytestrings (fixes compatibility
   with pymad).
 

@@ -244,9 +244,14 @@ def _fingerprint_file_fpcalc(path):
     fpcalc = os.environ.get(FPCALC_ENVVAR, FPCALC_COMMAND)
     command = [fpcalc, "-length", str(MAX_AUDIO_LENGTH), path]
     try:
-        output = subprocess.check_output(command)
-    except (OSError, subprocess.CalledProcessError):
+        proc = subprocess.Popen(command, stdout=subprocess.PIPE)
+        output, _ = proc.communicate()
+    except OSError:
         raise FingerprintGenerationError("fpcalc invocation failed")
+    retcode = proc.poll()
+    if retcode:
+        raise FingerprintGenerationError("fpcalc exited with status %i" %
+                                         retcode)
 
     duration = fp = None
     for line in output.splitlines():

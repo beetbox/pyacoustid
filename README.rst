@@ -98,6 +98,7 @@ Version History
 
 0.5
   Fix response parsing when recording has no artists or title.
+  Fix compatibility with Python < 2.7.
 
 0.4
   Fingerprinting can now fall back to using the ``fpcalc`` command-line tool

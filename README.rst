@@ -96,6 +96,9 @@ server.
 Version History
 ---------------
 
+0.5
+  Fix response parsing when recording has no artists or title.
+
 0.4
   Fingerprinting can now fall back to using the ``fpcalc`` command-line tool
   instead of the Chromaprint dynamic library so the library can be used with

@@ -203,13 +203,18 @@ def parse_lookup_result(data):
         recording = result['recordings'][0]
 
         # Get the artist if available.
-        if recording['artists']:
+        if ('artists' in recording) and recording['artists']:
             artist = recording['artists'][0]
             artist_name = artist['name']
         else:
             artist_name = None
 
-        yield score, recording['id'], recording['title'], artist_name
+        if 'title' in recording:
+                title = recording['title']
+        else:
+                title = None
+
+        yield score, recording['id'], title, artist_name
 
 def match(apikey, path, meta=DEFAULT_META, parse=True):
     """Look up the metadata for an audio file. If ``parse`` is true,

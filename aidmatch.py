@@ -26,6 +26,9 @@ API_KEY = 'cSpUJKpD'
 def aidmatch(filename):
     try:
         results = acoustid.match(API_KEY, filename)
+    except acoustid.NoBackendError:
+        print >>sys.stderr, "chromaprint library/tool not found"
+        sys.exit(1)
     except acoustid.FingerprintGenerationError:
         print >>sys.stderr, "fingerprint could not be calculated"
         sys.exit(1)

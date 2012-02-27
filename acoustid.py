@@ -18,6 +18,7 @@ import urllib
 import urllib2
 import httplib
 import contextlib
+import errno
 try:
     import audioread
     have_audioread = True
@@ -46,6 +47,11 @@ class AcoustidError(Exception):
 
 class FingerprintGenerationError(AcoustidError):
     """The audio could not be fingerprinted."""
+
+class NoBackendError(FingerprintGenerationError):
+    """The audio could not be fingerprinted because neither the
+    Chromaprint library nor the fpcalc command-line tool is installed.
+    """
 
 class FingerprintSubmissionError(AcoustidError):
     """Missing required data for a fingerprint submission."""
@@ -246,8 +252,12 @@ def _fingerprint_file_fpcalc(path):
     try:
         proc = subprocess.Popen(command, stdout=subprocess.PIPE)
         output, _ = proc.communicate()
-    except OSError:
-        raise FingerprintGenerationError("fpcalc invocation failed")
+    except OSError, exc:
+        if exc.errno == errno.ENOENT:
+            raise NoBackendError("fpcalc not found")
+        else:
+            raise FingerprintGenerationError("fpcalc invocation failed: %s" %
+                                             str(exc))
     retcode = proc.poll()
     if retcode:
         raise FingerprintGenerationError("fpcalc exited with status %i" %

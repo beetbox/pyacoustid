@@ -88,7 +88,8 @@ for all API calls with the ``set_base_url`` function.
 Calls to the library can raise ``AcoustidError`` exceptions of two subtypes:
 ``FingerprintGenerationError`` and ``WebServiceError``. Catch these exceptions
 if you want to proceed when audio can't be decoded or no match is found on the
-server.
+server. ``NoBackendError``, a subclass of ``FingerprintGenerationError``, is
+used when the Chromaprint library or fpcalc command-line tool cannot be found.
 
 .. _Web service documentation: http://acoustid.org/webservice
 

@@ -281,17 +281,24 @@ def _fingerprint_file_fpcalc(path):
         raise FingerprintGenerationError("missing fpcalc output")
     return duration, fp
 
+def fingerprint_file(path):
+    """Fingerprint a file either using the Chromaprint dynamic library
+    or the fpcalc command-line tool, whichever is available. Returns the
+    duration and the fingerprint.
+    """
+    path = os.path.abspath(os.path.expanduser(path))
+    if have_audioread and have_chromaprint:
+        return _fingerprint_file_audioread(path)
+    else:
+        return _fingerprint_file_fpcalc(path)
+
 def match(apikey, path, meta=DEFAULT_META, parse=True):
     """Look up the metadata for an audio file. If ``parse`` is true,
     then ``parse_lookup_result`` is used to return an iterator over
     small tuple of relevant information; otherwise, the full parsed JSON
     response is returned.
     """
-    path = os.path.abspath(os.path.expanduser(path))
-    if have_audioread and have_chromaprint:
-        duration, fp = _fingerprint_file_audioread(path)
-    else:
-        duration, fp = _fingerprint_file_fpcalc(path)
+    duration, fp = fingerprint_file(path)
     response = lookup(apikey, fp, duration, meta)
     if parse:
         return parse_lookup_result(response)

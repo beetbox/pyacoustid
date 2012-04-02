@@ -97,6 +97,10 @@ used when the Chromaprint library or fpcalc command-line tool cannot be found.
 Version History
 ---------------
 
+0.6
+  Add a new function, ``fingerprint_file``, that automatically selects a
+  backend for fingerprinting a single file.
+
 0.5
   Fix response parsing when recording has no artists or title.
   Fix compatibility with Python < 2.7.

@@ -70,6 +70,9 @@ parts of the process:
 - ``fingerprint(samplerate, channels, pcmiter)``: Generate a fingerprint for raw
   audio data. Specify the audio parameters and give an iterable containing
   blocks of PCM data.
+- ``fingerprint_file(path)``: Using either the Chromaprint dynamic library or
+  the ``fpcalc`` command-line tool, fingerprint an audio file. Returns a pair
+  consisting of the file's duration and its fingerprint.
 - ``lookup(apikey, fingerprint, duration)``: Make a request to the `Acoustid`_
   API to look up the fingerprint returned by the previous function. An API key
   is required, as is the length, in seconds, of the source audio. Returns a

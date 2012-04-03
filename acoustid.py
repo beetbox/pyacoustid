@@ -155,7 +155,18 @@ def _api_request(url, params):
     which are encoded as compressed form data, and returns a parsed JSON
     response. May raise a WebServiceError if the request fails.
     """
-    body = _compress(urllib.urlencode(params))
+    # Encode any Unicode values in parameters. (urllib.urlencode in
+    # Python 2.x operates on bytestrings, so a Unicode error is raised
+    # if non-ASCII characters are passed in a Unicode string.)
+    byte_params = {}
+    for key, value in params.iteritems():
+        if isinstance(key, unicode):
+            key = key.encode('utf8')
+        if isinstance(value, unicode):
+            value = value.encode('utf8')
+        byte_params[key] = value
+
+    body = _compress(urllib.urlencode(byte_params))
     req = urllib2.Request(url, body, {
         'Content-Encoding': 'gzip',
         'Accept-Encoding': 'gzip',

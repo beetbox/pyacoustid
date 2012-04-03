@@ -100,6 +100,10 @@ used when the Chromaprint library or fpcalc command-line tool cannot be found.
 Version History
 ---------------
 
+0.7
+  Properly encode Unicode parameters (resolves a ``UnicodeEncodeError``
+  in fingerprint submission).
+
 0.6
   Add a new function, ``fingerprint_file``, that automatically selects a
   backend for fingerprinting a single file.

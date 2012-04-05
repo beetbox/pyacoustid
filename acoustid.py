@@ -232,19 +232,19 @@ def parse_lookup_result(data):
 
     for result in data['results']:
         score = result['score']
-        if not result.get('recordings'):
+        if 'recordings' not in result:
             # No recording attached. This result is not very useful.
             continue
-        recording = result['recordings'][0]
 
-        # Get the artist if available.
-        if recording.get('artists'):
-            artist = recording['artists'][0]
-            artist_name = artist['name']
-        else:
-            artist_name = None
+        for recording in result['recordings']:
+            # Get the artist if available.
+            if recording.get('artists'):
+                names = [artist['name'] for artist in recording['artists']]
+                artist_name = '; '.join(names)
+            else:
+                artist_name = None
 
-        yield score, recording['id'], recording.get('title'), artist_name
+            yield score, recording['id'], recording.get('title'), artist_name
 
 def _fingerprint_file_audioread(path):
     """Fingerprint a file by using audioread and chromaprint."""

@@ -103,6 +103,7 @@ Version History
 0.7
   Properly encode Unicode parameters (resolves a ``UnicodeEncodeError``
   in fingerprint submission).
+  Parse all recordings for each Acoustid lookup result.
 
 0.6
   Add a new function, ``fingerprint_file``, that automatically selects a

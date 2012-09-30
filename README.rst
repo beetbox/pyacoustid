@@ -100,6 +100,10 @@ used when the Chromaprint library or fpcalc command-line tool cannot be found.
 Version History
 ---------------
 
+0.8
+  Include ``fpcalc.py``, a script mimicking the ``fpcalc`` program from the
+  Chromaprint package.
+
 0.7
   Properly encode Unicode parameters (resolves a ``UnicodeEncodeError``
   in fingerprint submission).

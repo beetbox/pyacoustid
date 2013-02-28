@@ -263,12 +263,17 @@ def _fingerprint_file_fpcalc(path, maxlength):
     try:
         proc = subprocess.Popen(command, stdout=subprocess.PIPE)
         output, _ = proc.communicate()
-    except OSError, exc:
+    except OSError as exc:
         if exc.errno == errno.ENOENT:
             raise NoBackendError("fpcalc not found")
         else:
             raise FingerprintGenerationError("fpcalc invocation failed: %s" %
                                              str(exc))
+    except UnicodeEncodeError:
+        # Due to a bug in Python 2's subprocess on Windows, Unicode
+        # filenames can fail to encode on that platform. See:
+        # http://bugs.python.org/issue1759845
+        raise FingerprintGenerationError("argument encoding failed")
     retcode = proc.poll()
     if retcode:
         raise FingerprintGenerationError("fpcalc exited with status %i" %

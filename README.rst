@@ -100,9 +100,11 @@ used when the Chromaprint library or fpcalc command-line tool cannot be found.
 Version History
 ---------------
 
-0.8
+1.0.0
   Include ``fpcalc.py``, a script mimicking the ``fpcalc`` program from the
   Chromaprint package.
+  Handle a ``UnicodeDecodeError`` raised when using the ``fpcalc`` backend on
+  Windows with Unicode filenames.
 
 0.7
   Properly encode Unicode parameters (resolves a ``UnicodeEncodeError``

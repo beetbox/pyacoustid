@@ -25,7 +25,7 @@ def _read(fn):
     return data
 
 setup(name='pyacoustid',
-      version='0.7',
+      version='1.0.0',
       description=
         'bindings for Chromaprint acoustic fingerprinting and the '
         'Acoustid API',

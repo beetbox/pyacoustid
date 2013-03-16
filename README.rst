@@ -105,6 +105,7 @@ Version History
   Chromaprint package.
   Handle a ``UnicodeDecodeError`` raised when using the ``fpcalc`` backend on
   Windows with Unicode filenames.
+  Standard error output from ``fpcalc`` is suppressed.
 
 0.7
   Properly encode Unicode parameters (resolves a ``UnicodeEncodeError``

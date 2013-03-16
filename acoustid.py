@@ -143,7 +143,7 @@ def _send_request(req):
     try:
         with contextlib.closing(urllib2.urlopen(req)) as f:
             return f.read(), f.info()
-    except urllib2.HTTPError, exc:
+    except urllib2.HTTPError as exc:
         raise WebServiceError('HTTP status %i' % exc.code, exc.read())
     except httplib.BadStatusLine:
         raise WebServiceError('bad HTTP status line')
@@ -261,8 +261,10 @@ def _fingerprint_file_fpcalc(path, maxlength):
     fpcalc = os.environ.get(FPCALC_ENVVAR, FPCALC_COMMAND)
     command = [fpcalc, "-length", str(maxlength), path]
     try:
-        proc = subprocess.Popen(command, stdout=subprocess.PIPE)
-        output, _ = proc.communicate()
+        with open(os.devnull, 'wb') as devnull:
+            proc = subprocess.Popen(command, stdout=subprocess.PIPE,
+                                    stderr=devnull)
+            output, _ = proc.communicate()
     except OSError as exc:
         if exc.errno == errno.ENOENT:
             raise NoBackendError("fpcalc not found")

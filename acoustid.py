@@ -16,6 +16,7 @@ import os
 import sys
 import json
 import requests
+import requests.exceptions
 try:
     from urllib import urlencode
 except ImportError:
@@ -158,7 +159,10 @@ def _api_request(url, params):
                 value = value.encode('utf8')
             byte_params[key] = value
         params = byte_params
-    response = requests.post(url, data=_compress(urlencode(params)), headers=headers, )
+    try:
+        response = requests.post(url, data=_compress(urlencode(params)), headers=headers, )
+    except requests.exceptions.RequestException as exc:
+        raise WebServiceError("Can't process HTTP request: %s" % exc.args)
     data = response.content
     if sys.version_info[0] >= 3:
         data = data.decode('utf8')

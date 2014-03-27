@@ -39,7 +39,7 @@ setup(name='pyacoustid',
       platforms='ALL',
       long_description=_read('README.rst'),
 
-      install_requires = ['audioread'],
+      install_requires = ['audioread', 'requests'],
 
       py_modules=[
           'chromaprint',

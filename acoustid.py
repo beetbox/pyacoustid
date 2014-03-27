@@ -36,11 +36,7 @@ import subprocess
 import threading
 import time
 import gzip
-
-try:
-    from StringIO import StringIO
-except ImportError:
-    from io import StringIO
+from io import BytesIO
 
 API_BASE_URL = 'http://api.acoustid.org/v2/'
 DEFAULT_META = 'recordings'
@@ -116,9 +112,12 @@ class _rate_limit(object):
 
 def _compress(data):
     """Compress a string to a gzip archive."""
-    sio = StringIO()
+    sio = BytesIO()
     with contextlib.closing(gzip.GzipFile(fileobj=sio, mode='wb')) as f:
-        f.write(data)
+        if sys.version_info[0] < 3:
+            f.write(data)
+        else:
+            f.write(bytes(data, 'UTF-8'))
     return sio.getvalue()
 
 
@@ -161,6 +160,8 @@ def _api_request(url, params):
         params = byte_params
     response = requests.post(url, data=_compress(urlencode(params)), headers=headers, )
     data = response.content
+    if sys.version_info[0] >= 3:
+        data = data.decode('utf8')
     try:
         return json.loads(data)
     except ValueError:

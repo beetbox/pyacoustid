@@ -13,11 +13,14 @@
 # included in all copies or substantial portions of the Software.
 
 import os
+import sys
 from setuptools import setup
 
 def _read(fn):
     path = os.path.join(os.path.dirname(__file__), fn)
-    data = open(path).read().decode('utf8')
+    data = open(path).read()
+    if sys.version_info[0] < 3:
+        data = data.decode('utf8')
     # Special case some Unicode characters; PyPI seems to only like ASCII.
     data = data.replace(u'\xe1', u'a')
     data = data.replace(u'\u0161', u's')

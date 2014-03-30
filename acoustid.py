@@ -8,7 +8,7 @@
 # distribute, sublicense, and/or sell copies of the Software, and to
 # permit persons to whom the Software is furnished to do so, subject to
 # the following conditions:
-# 
+#
 # The above copyright notice and this permission notice shall be
 # included in all copies or substantial portions of the Software.
 
@@ -39,6 +39,9 @@ import time
 import gzip
 from io import BytesIO
 
+
+PY3 = sys.version_info[0] >= 3
+
 API_BASE_URL = 'http://api.acoustid.org/v2/'
 DEFAULT_META = 'recordings'
 REQUEST_INTERVAL = 0.33 # 3 requests/second.
@@ -46,19 +49,26 @@ MAX_AUDIO_LENGTH = 120 # Seconds.
 FPCALC_COMMAND = 'fpcalc'
 FPCALC_ENVVAR = 'FPCALC'
 
+
+# Exceptions.
+
 class AcoustidError(Exception):
     """Base for exceptions in this module."""
 
+
 class FingerprintGenerationError(AcoustidError):
     """The audio could not be fingerprinted."""
+
 
 class NoBackendError(FingerprintGenerationError):
     """The audio could not be fingerprinted because neither the
     Chromaprint library nor the fpcalc command-line tool is installed.
     """
 
+
 class FingerprintSubmissionError(AcoustidError):
     """Missing required data for a fingerprint submission."""
+
 
 class WebServiceError(AcoustidError):
     """The Web service request failed. The field ``message`` contains a
@@ -87,6 +97,9 @@ class WebServiceError(AcoustidError):
         super(WebServiceError, self).__init__(message)
         self.message = message
 
+
+# Utilities.
+
 class _rate_limit(object):
     """A decorator that limits the rate at which the function may be
     called.  The rate is controlled by the REQUEST_INTERVAL module-level
@@ -111,11 +124,12 @@ class _rate_limit(object):
             # Call the original function.
             return self.fun(*args, **kwargs)
 
+
 def _compress(data):
     """Compress a string to a gzip archive."""
     sio = BytesIO()
     with contextlib.closing(gzip.GzipFile(fileobj=sio, mode='wb')) as f:
-        if sys.version_info[0] < 3:
+        if not PY3:
             f.write(data)
         else:
             f.write(bytes(data, 'UTF-8'))
@@ -129,13 +143,16 @@ def set_base_url(url):
     global API_BASE_URL
     API_BASE_URL = url
 
+
 def _get_lookup_url():
     """Get the URL of the lookup API endpoint."""
     return API_BASE_URL + 'lookup'
 
+
 def _get_submit_url():
     """Get the URL of the submission API endpoint."""
     return API_BASE_URL + 'submit'
+
 
 def _api_request(url, params):
     """Makes a POST request for the URL with the given form parameters,
@@ -150,7 +167,9 @@ def _api_request(url, params):
         'Content-Encoding': 'gzip',
         "Content-Type": "application/x-www-form-urlencoded"
     }
-    if sys.version_info[0] < 3:
+
+    # On Python 2, parameters need to be encoded as bytes.
+    if not PY3:
         byte_params = {}
         for key, value in params.iteritems():
             if isinstance(key, unicode):
@@ -159,17 +178,25 @@ def _api_request(url, params):
                 value = value.encode('utf8')
             byte_params[key] = value
         params = byte_params
+
     try:
-        response = requests.post(url, data=_compress(urlencode(params)), headers=headers, )
+        response = requests.post(url,
+                                 data=_compress(urlencode(params)),
+                                 headers=headers)
     except requests.exceptions.RequestException as exc:
         raise WebServiceError("Can't process HTTP request: %s" % exc.args)
+
     data = response.content
-    if sys.version_info[0] >= 3:
+    if PY3:
         data = data.decode('utf8')
+
     try:
         return json.loads(data)
     except ValueError:
         raise WebServiceError('response is not valid JSON')
+
+
+# Main API.
 
 def fingerprint(samplerate, channels, pcmiter, maxlength=MAX_AUDIO_LENGTH):
     """Fingerprint audio data given its sample rate and number of
@@ -272,7 +299,7 @@ def _fingerprint_file_fpcalc(path, maxlength):
                                          retcode)
 
     duration = fp = None
-    if sys.version_info[0] >= 3:
+    if PY3:
         output = output.decode('utf8')
     for line in output.splitlines():
         line = str(line)

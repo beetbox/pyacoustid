@@ -100,8 +100,9 @@ used when the Chromaprint library or fpcalc command-line tool cannot be found.
 Version History
 ---------------
 
-1.0.1
+1.1.0
   Include ``fpcalc.py`` script in source distributions.
+  Add Python 3 support (thanks to Igor Tsarev).
 
 1.0.0
   Include ``fpcalc.py``, a script mimicking the ``fpcalc`` program from the

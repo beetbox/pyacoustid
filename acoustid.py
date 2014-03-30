@@ -184,14 +184,10 @@ def _api_request(url, params):
                                  data=_compress(urlencode(params)),
                                  headers=headers)
     except requests.exceptions.RequestException as exc:
-        raise WebServiceError("Can't process HTTP request: %s" % exc.args)
-
-    data = response.content
-    if PY3:
-        data = data.decode('utf8')
+        raise WebServiceError("HTTP request failed: {0}".format(exc))
 
     try:
-        return json.loads(data)
+        return response.json()
     except ValueError:
         raise WebServiceError('response is not valid JSON')
 

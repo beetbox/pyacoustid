@@ -17,6 +17,10 @@
 """Simple script for calculating audio fingerprints, using the same
 arguments/output as the fpcalc utility from Chromaprint."""
 
+from __future__ import division
+from __future__ import absolute_import
+from __future__ import print_function
+
 import sys
 import argparse
 import acoustid
@@ -40,8 +44,8 @@ def main():
         try:
             duration, fp = acoustid.fingerprint_file(path, args.length)
         except Exception:
-            print >>sys.stderr, "ERROR: unable to calculate fingerprint " \
-                                "for file %s, skipping" % path
+            print("ERROR: unable to calculate fingerprint "
+                  "for file %s, skipping" % path, file=sys.stderr)
             continue
         if args.raw:
             raw_fp = chromaprint.decode_fingerprint(fp)[0]
@@ -49,10 +53,9 @@ def main():
         if not first:
             print
         first = False
-        print 'FILE=%s' % path
-        print 'DURATION=%d' % duration
-        print 'FINGERPRINT=%s' % fp
+        print('FILE=%s' % path)
+        print('DURATION=%d' % duration)
+        print('FINGERPRINT=%s' % fp.decode('utf8'))
 
 if __name__ == '__main__':
     main()
-

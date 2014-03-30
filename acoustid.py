@@ -1,5 +1,5 @@
 # This file is part of pyacoustid.
-# Copyright 2012, Adrian Sampson.
+# Copyright 2014, Adrian Sampson.
 #
 # Permission is hereby granted, free of charge, to any person obtaining
 # a copy of this software and associated documentation files (the
@@ -11,6 +11,9 @@
 #
 # The above copyright notice and this permission notice shall be
 # included in all copies or substantial portions of the Software.
+
+from __future__ import division
+from __future__ import absolute_import
 
 import os
 import sys

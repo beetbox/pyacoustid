@@ -159,6 +159,7 @@ def _compress(data):
     return sio.getvalue()
 
 
+@_rate_limit
 def _api_request(url, params):
     """Makes a POST request for the URL with the given form parameters,
     which are encoded as compressed form data, and returns a parsed JSON

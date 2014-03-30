@@ -296,20 +296,17 @@ def _fingerprint_file_fpcalc(path, maxlength):
                                          retcode)
 
     duration = fp = None
-    if PY3:
-        output = output.decode('utf8')
     for line in output.splitlines():
-        line = str(line)
         try:
-            parts = line.split('=', 1)
+            parts = line.split(b'=', 1)
         except ValueError:
             raise FingerprintGenerationError("malformed fpcalc output")
-        if parts[0] == 'DURATION':
+        if parts[0] == b'DURATION':
             try:
                 duration = int(parts[1])
             except ValueError:
                 raise FingerprintGenerationError("fpcalc duration not numeric")
-        elif parts[0] == 'FINGERPRINT':
+        elif parts[0] == b'FINGERPRINT':
             fp = parts[1]
 
     if duration is None or fp is None:

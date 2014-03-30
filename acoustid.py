@@ -13,10 +13,14 @@
 # included in all copies or substantial portions of the Software.
 
 import os
+import sys
 import json
-import urllib
-import urllib2
-import httplib
+import requests
+import requests.exceptions
+try:
+    from urllib import urlencode
+except ImportError:
+    from urllib.parse import urlencode
 import contextlib
 import errno
 try:
@@ -33,7 +37,7 @@ import subprocess
 import threading
 import time
 import gzip
-from StringIO import StringIO
+from io import BytesIO
 
 API_BASE_URL = 'http://api.acoustid.org/v2/'
 DEFAULT_META = 'recordings'
@@ -109,16 +113,14 @@ class _rate_limit(object):
 
 def _compress(data):
     """Compress a string to a gzip archive."""
-    sio = StringIO()
+    sio = BytesIO()
     with contextlib.closing(gzip.GzipFile(fileobj=sio, mode='wb')) as f:
-        f.write(data)
+        if sys.version_info[0] < 3:
+            f.write(data)
+        else:
+            f.write(bytes(data, 'UTF-8'))
     return sio.getvalue()
 
-def _decompress(data):
-    """Decompress a gzip archive contained in a string."""
-    sio = StringIO(data)
-    with contextlib.closing(gzip.GzipFile(fileobj=sio)) as f:
-        return f.read()
 
 def set_base_url(url):
     """Set the URL of the API server to query."""
@@ -135,21 +137,6 @@ def _get_submit_url():
     """Get the URL of the submission API endpoint."""
     return API_BASE_URL + 'submit'
 
-@_rate_limit
-def _send_request(req):
-    """Given a urllib2 Request object, make the request and return a
-    tuple containing the response data and headers.
-    """
-    try:
-        with contextlib.closing(urllib2.urlopen(req)) as f:
-            return f.read(), f.info()
-    except urllib2.HTTPError as exc:
-        raise WebServiceError('HTTP status %i' % exc.code, exc.read())
-    except httplib.BadStatusLine:
-        raise WebServiceError('bad HTTP status line')
-    except IOError:
-        raise WebServiceError('connection failed')
-
 def _api_request(url, params):
     """Makes a POST request for the URL with the given form parameters,
     which are encoded as compressed form data, and returns a parsed JSON
@@ -158,24 +145,27 @@ def _api_request(url, params):
     # Encode any Unicode values in parameters. (urllib.urlencode in
     # Python 2.x operates on bytestrings, so a Unicode error is raised
     # if non-ASCII characters are passed in a Unicode string.)
-    byte_params = {}
-    for key, value in params.iteritems():
-        if isinstance(key, unicode):
-            key = key.encode('utf8')
-        if isinstance(value, unicode):
-            value = value.encode('utf8')
-        byte_params[key] = value
-
-    body = _compress(urllib.urlencode(byte_params))
-    req = urllib2.Request(url, body, {
-        'Content-Encoding': 'gzip',
+    headers = {
         'Accept-Encoding': 'gzip',
-    })
-
-    data, headers = _send_request(req)
-    if headers.get('Content-Encoding') == 'gzip':
-        data = _decompress(data)
-
+        'Content-Encoding': 'gzip',
+        "Content-Type": "application/x-www-form-urlencoded"
+    }
+    if sys.version_info[0] < 3:
+        byte_params = {}
+        for key, value in params.iteritems():
+            if isinstance(key, unicode):
+                key = key.encode('utf8')
+            if isinstance(value, unicode):
+                value = value.encode('utf8')
+            byte_params[key] = value
+        params = byte_params
+    try:
+        response = requests.post(url, data=_compress(urlencode(params)), headers=headers, )
+    except requests.exceptions.RequestException as exc:
+        raise WebServiceError("Can't process HTTP request: %s" % exc.args)
+    data = response.content
+    if sys.version_info[0] >= 3:
+        data = data.decode('utf8')
     try:
         return json.loads(data)
     except ValueError:
@@ -282,7 +272,10 @@ def _fingerprint_file_fpcalc(path, maxlength):
                                          retcode)
 
     duration = fp = None
+    if sys.version_info[0] >= 3:
+        output = output.decode('utf8')
     for line in output.splitlines():
+        line = str(line)
         try:
             parts = line.split('=', 1)
         except ValueError:

@@ -1,3 +1,4 @@
+from __future__ import print_function
 # This file is part of pyacoustid.
 # Copyright 2011, Adrian Sampson.
 #
@@ -27,13 +28,13 @@ def aidmatch(filename):
     try:
         results = acoustid.match(API_KEY, filename)
     except acoustid.NoBackendError:
-        print >>sys.stderr, "chromaprint library/tool not found"
+        print("chromaprint library/tool not found", file=sys.stderr)
         sys.exit(1)
     except acoustid.FingerprintGenerationError:
-        print >>sys.stderr, "fingerprint could not be calculated"
+        print("fingerprint could not be calculated", file=sys.stderr)
         sys.exit(1)
-    except acoustid.WebServiceError, exc:
-        print >>sys.stderr, "web service request failed:", exc.message
+    except acoustid.WebServiceError as exc:
+        print("web service request failed:", exc.message, file=sys.stderr)
         sys.exit(1)
 
     first = True
@@ -41,10 +42,10 @@ def aidmatch(filename):
         if first:
             first = False
         else:
-            print
-        print '%s - %s' % (artist, title)
-        print 'http://musicbrainz.org/recording/%s' % rid
-        print 'Score: %i%%' % (int(score * 100))
+            print()
+        print('%s - %s' % (artist, title))
+        print('http://musicbrainz.org/recording/%s' % rid)
+        print('Score: %i%%' % (int(score * 100)))
 
 if __name__ == '__main__':
     aidmatch(sys.argv[1])

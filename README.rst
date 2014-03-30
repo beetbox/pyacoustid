@@ -13,6 +13,9 @@ in C but portable, and the Web service, which provides fingerprint lookups.
 Installation
 ------------
 
+This library works with Python 2 (2.7+, possibly also 2.6) and Python 3
+(3.3+).
+
 First, install the `Chromaprint`_ fingerprinting library by `Lukáš Lalinský`__.
 (The library itself depends on an FFT library, but it's smart enough to use an
 algorithm from software you probably already have installed; see the Chromaprint
@@ -29,13 +32,14 @@ Then you can install this library from `PyPI`_ using `pip`_::
 
     $ pip install pyacoustid
 
-This library uses `audioread`_ to do audio decoding (pip should automatically
-install this dependency), but it's not really necessary if you already have
-decoded audio.
+This library uses `audioread`_ to do audio decoding when not using ``fpcalc``
+and `requests`_ to talk to the HTTP API (pip should automatically install
+these dependencies).
 
 .. _pip: http://www.pip-installer.org/
 .. _PyPI: http://pypi.python.org/
 .. _audioread: https://github.com/sampsyo/audioread
+.. _requests: http://python-requests.org
 
 
 Running

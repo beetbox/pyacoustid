@@ -1,11 +1,20 @@
 # Copyright (C) 2011 Lukas Lalinsky
 # (Minor modifications by Adrian Sampson.)
-# Distributed under the MIT license, see the LICENSE file for details. 
+# Distributed under the MIT license, see the LICENSE file for details.
 
 """Low-level ctypes wrapper from the chromaprint library."""
 
 import sys
 import ctypes
+
+
+PY3 = sys.version_info[0] >= 3
+if PY3:
+    BUFFER_TYPES = (memoryview,)
+elif sys.version_info[1] >= 7:
+    BUFFER_TYPES = (buffer, memoryview,)
+else:
+    BUFFER_TYPES = (buffer,)
 
 
 # Find the base library and declare prototypes.
@@ -105,10 +114,10 @@ class Fingerprinter(object):
         """Send raw PCM audio data to the fingerprinter. Data may be
         either a bytestring or a buffer object.
         """
-        if isinstance(data, buffer):
+        if isinstance(data, BUFFER_TYPES):
             data = str(data)
-        elif not isinstance(data, str):
-            raise TypeError('data must be str or buffer')
+        elif not isinstance(data, bytes):
+            raise TypeError('data must be bytes, buffer, or memoryview')
         _check(_libchromaprint.chromaprint_feed(
             self._ctx, data, len(data) // 2
         ))

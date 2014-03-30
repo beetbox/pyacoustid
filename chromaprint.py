@@ -8,8 +8,7 @@ import sys
 import ctypes
 
 
-PY3 = sys.version_info[0] >= 3
-if PY3:
+if sys.version_info[0] >= 3:
     BUFFER_TYPES = (memoryview,)
 elif sys.version_info[1] >= 7:
     BUFFER_TYPES = (buffer, memoryview,)

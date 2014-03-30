@@ -16,7 +16,6 @@ from __future__ import division
 from __future__ import absolute_import
 
 import os
-import sys
 import json
 import requests
 import contextlib
@@ -37,8 +36,6 @@ import time
 import gzip
 from io import BytesIO
 
-
-PY3 = sys.version_info[0] >= 3
 
 API_BASE_URL = 'http://api.acoustid.org/v2/'
 DEFAULT_META = 'recordings'
@@ -119,13 +116,10 @@ def _get_submit_url():
 # Compressed HTTP request bodies.
 
 def _compress(data):
-    """Compress a string to a gzip archive."""
+    """Compress a bytestring to a gzip archive."""
     sio = BytesIO()
     with contextlib.closing(gzip.GzipFile(fileobj=sio, mode='wb')) as f:
-        if not PY3:
-            f.write(data)
-        else:
-            f.write(bytes(data, 'UTF-8'))
+        f.write(data)
     return sio.getvalue()
 
 
@@ -134,7 +128,10 @@ class CompressedHTTPAdapter(requests.adapters.HTTPAdapter):
     Content-Encoding header is set accordingly.
     """
     def add_headers(self, request, **kwargs):
-        request.prepare_body(_compress(request.body), None)
+        body = request.body
+        if not isinstance(body, bytes):
+            body = body.encode('utf8')
+        request.prepare_body(_compress(body), None)
         request.headers['Content-Encoding'] = 'gzip'
 
 

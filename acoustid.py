@@ -19,11 +19,6 @@ import os
 import sys
 import json
 import requests
-import requests.exceptions
-try:
-    from urllib import urlencode
-except ImportError:
-    from urllib.parse import urlencode
 import contextlib
 import errno
 try:
@@ -121,6 +116,28 @@ def _get_submit_url():
     return API_BASE_URL + 'submit'
 
 
+# Compressed HTTP request bodies.
+
+def _compress(data):
+    """Compress a string to a gzip archive."""
+    sio = BytesIO()
+    with contextlib.closing(gzip.GzipFile(fileobj=sio, mode='wb')) as f:
+        if not PY3:
+            f.write(data)
+        else:
+            f.write(bytes(data, 'UTF-8'))
+    return sio.getvalue()
+
+
+class CompressedHTTPAdapter(requests.adapters.HTTPAdapter):
+    """An `HTTPAdapter` that compresses request bodies with gzip. The
+    Content-Encoding header is set accordingly.
+    """
+    def add_headers(self, request, **kwargs):
+        request.prepare_body(_compress(request.body), None)
+        request.headers['Content-Encoding'] = 'gzip'
+
+
 # Utilities.
 
 class _rate_limit(object):
@@ -148,47 +165,21 @@ class _rate_limit(object):
             return self.fun(*args, **kwargs)
 
 
-def _compress(data):
-    """Compress a string to a gzip archive."""
-    sio = BytesIO()
-    with contextlib.closing(gzip.GzipFile(fileobj=sio, mode='wb')) as f:
-        if not PY3:
-            f.write(data)
-        else:
-            f.write(bytes(data, 'UTF-8'))
-    return sio.getvalue()
-
-
 @_rate_limit
 def _api_request(url, params):
     """Makes a POST request for the URL with the given form parameters,
     which are encoded as compressed form data, and returns a parsed JSON
     response. May raise a WebServiceError if the request fails.
     """
-    # Encode any Unicode values in parameters. (urllib.urlencode in
-    # Python 2.x operates on bytestrings, so a Unicode error is raised
-    # if non-ASCII characters are passed in a Unicode string.)
     headers = {
         'Accept-Encoding': 'gzip',
-        'Content-Encoding': 'gzip',
         "Content-Type": "application/x-www-form-urlencoded"
     }
 
-    # On Python 2, parameters need to be encoded as bytes.
-    if not PY3:
-        byte_params = {}
-        for key, value in params.iteritems():
-            if isinstance(key, unicode):
-                key = key.encode('utf8')
-            if isinstance(value, unicode):
-                value = value.encode('utf8')
-            byte_params[key] = value
-        params = byte_params
-
+    session = requests.Session()
+    session.mount('http://', CompressedHTTPAdapter())
     try:
-        response = requests.post(url,
-                                 data=_compress(urlencode(params)),
-                                 headers=headers)
+        response = session.post(url, data=params, headers=headers)
     except requests.exceptions.RequestException as exc:
         raise WebServiceError("HTTP request failed: {0}".format(exc))
 

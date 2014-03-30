@@ -101,6 +101,26 @@ class WebServiceError(AcoustidError):
         self.message = message
 
 
+# Endpoint configuration.
+
+def set_base_url(url):
+    """Set the URL of the API server to query."""
+    if not url.endswith('/'):
+        url += '/'
+    global API_BASE_URL
+    API_BASE_URL = url
+
+
+def _get_lookup_url():
+    """Get the URL of the lookup API endpoint."""
+    return API_BASE_URL + 'lookup'
+
+
+def _get_submit_url():
+    """Get the URL of the submission API endpoint."""
+    return API_BASE_URL + 'submit'
+
+
 # Utilities.
 
 class _rate_limit(object):
@@ -137,24 +157,6 @@ def _compress(data):
         else:
             f.write(bytes(data, 'UTF-8'))
     return sio.getvalue()
-
-
-def set_base_url(url):
-    """Set the URL of the API server to query."""
-    if not url.endswith('/'):
-        url += '/'
-    global API_BASE_URL
-    API_BASE_URL = url
-
-
-def _get_lookup_url():
-    """Get the URL of the lookup API endpoint."""
-    return API_BASE_URL + 'lookup'
-
-
-def _get_submit_url():
-    """Get the URL of the submission API endpoint."""
-    return API_BASE_URL + 'submit'
 
 
 def _api_request(url, params):
@@ -221,6 +223,7 @@ def fingerprint(samplerate, channels, pcmiter, maxlength=MAX_AUDIO_LENGTH):
     except chromaprint.FingerprintError:
         raise FingerprintGenerationError("fingerprint calculation failed")
 
+
 def lookup(apikey, fingerprint, duration, meta=DEFAULT_META):
     """Look up a fingerprint with the Acoustid Web service. Returns the
     Python object reflecting the response JSON data.
@@ -233,6 +236,7 @@ def lookup(apikey, fingerprint, duration, meta=DEFAULT_META):
         'meta': meta,
     }
     return _api_request(_get_lookup_url(), params)
+
 
 def parse_lookup_result(data):
     """Given a parsed JSON response, generate tuples containing the match
@@ -262,6 +266,7 @@ def parse_lookup_result(data):
 
             yield score, recording['id'], recording.get('title'), artist_name
 
+
 def _fingerprint_file_audioread(path, maxlength):
     """Fingerprint a file by using audioread and chromaprint."""
     try:
@@ -271,6 +276,7 @@ def _fingerprint_file_audioread(path, maxlength):
     except audioread.DecodeError:
         raise FingerprintGenerationError("audio could not be decoded")
     return duration, fp
+
 
 def _fingerprint_file_fpcalc(path, maxlength):
     """Fingerprint a file by calling the fpcalc application."""
@@ -318,6 +324,7 @@ def _fingerprint_file_fpcalc(path, maxlength):
         raise FingerprintGenerationError("missing fpcalc output")
     return duration, fp
 
+
 def fingerprint_file(path, maxlength=MAX_AUDIO_LENGTH):
     """Fingerprint a file either using the Chromaprint dynamic library
     or the fpcalc command-line tool, whichever is available. Returns the
@@ -328,6 +335,7 @@ def fingerprint_file(path, maxlength=MAX_AUDIO_LENGTH):
         return _fingerprint_file_audioread(path, maxlength)
     else:
         return _fingerprint_file_fpcalc(path, maxlength)
+
 
 def match(apikey, path, meta=DEFAULT_META, parse=True):
     """Look up the metadata for an audio file. If ``parse`` is true,
@@ -341,6 +349,7 @@ def match(apikey, path, meta=DEFAULT_META, parse=True):
         return parse_lookup_result(response)
     else:
         return response
+
 
 def submit(apikey, userkey, data):
     """Submit a fingerprint to the acoustid server. The ``apikey`` and

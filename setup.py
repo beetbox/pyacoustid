@@ -8,13 +8,14 @@
 # distribute, sublicense, and/or sell copies of the Software, and to
 # permit persons to whom the Software is furnished to do so, subject to
 # the following conditions:
-# 
+#
 # The above copyright notice and this permission notice shall be
 # included in all copies or substantial portions of the Software.
 
 import os
 import sys
 from setuptools import setup
+
 
 def _read(fn):
     path = os.path.join(os.path.dirname(__file__), fn)
@@ -28,8 +29,9 @@ def _read(fn):
     data = data.replace(u'\xfd', u'y')
     return data
 
+
 setup(name='pyacoustid',
-      version='1.1.0',
+      version='1.1.1',
       description=
         'bindings for Chromaprint acoustic fingerprinting and the '
         'Acoustid API',

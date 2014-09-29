@@ -104,6 +104,9 @@ used when the Chromaprint library or fpcalc command-line tool cannot be found.
 Version History
 ---------------
 
+1.1.1
+  Fix a possible setup error on Python 3 (thanks to Simon Chopin).
+
 1.1.0
   Include ``fpcalc.py`` script in source distributions.
   Add Python 3 support (thanks to Igor Tsarev).

@@ -104,6 +104,10 @@ used when the Chromaprint library or fpcalc command-line tool cannot be found.
 Version History
 ---------------
 
+1.1.2
+  Fix a possible crash on Unicode text in Python 2 in a non-Unicode locale.
+  Look for version "1" of the Chromaprint shared library file.
+
 1.1.1
   Fix a possible setup error on Python 3 (thanks to Simon Chopin).
 

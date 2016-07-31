@@ -115,8 +115,10 @@ class Fingerprinter(object):
         """
         if isinstance(data, BUFFER_TYPES):
             data = str(data)
+        elif isinstance(data, bytearray):
+            data = bytes(data)
         elif not isinstance(data, bytes):
-            raise TypeError('data must be bytes, buffer, or memoryview')
+            raise TypeError('data must be bytes, bytearray, buffer, or memoryview, not ' + str(type(data)))
         _check(_libchromaprint.chromaprint_feed(
             self._ctx, data, len(data) // 2
         ))

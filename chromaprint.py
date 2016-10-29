@@ -24,8 +24,10 @@ def _guess_lib_name():
     elif sys.platform == 'win32':
         return ('chromaprint.dll', 'libchromaprint.dll')
     elif sys.platform == 'cygwin':
-        return ('libchromaprint.dll.a', 'cygchromaprint-1.dll', 'cygchromaprint-0.dll')
+        return ('libchromaprint.dll.a', 'cygchromaprint-1.dll',
+                'cygchromaprint-0.dll')
     return ('libchromaprint.so.1', 'libchromaprint.so.0')
+
 
 for name in _guess_lib_name():
     try:
@@ -35,6 +37,7 @@ for name in _guess_lib_name():
         pass
 else:
     raise ImportError("couldn't find libchromaprint")
+
 
 _libchromaprint.chromaprint_get_version.argtypes = ()
 _libchromaprint.chromaprint_get_version.restype = ctypes.c_char_p
@@ -81,12 +84,14 @@ _libchromaprint.chromaprint_dealloc.restype = None
 class FingerprintError(Exception):
     """Raised when a call to the underlying library fails."""
 
+
 def _check(res):
     """Check the result of a library call, raising an error if the call
     failed.
     """
     if res != 1:
         raise FingerprintError()
+
 
 class Fingerprinter(object):
 
@@ -134,6 +139,7 @@ class Fingerprinter(object):
         _libchromaprint.chromaprint_dealloc(fingerprint_ptr)
         return fingerprint
 
+
 def decode_fingerprint(data, base64=True):
     result_ptr = ctypes.POINTER(ctypes.c_int32)()
     result_size = ctypes.c_int()
@@ -145,6 +151,7 @@ def decode_fingerprint(data, base64=True):
     result = result_ptr[:result_size.value]
     _libchromaprint.chromaprint_dealloc(result_ptr)
     return result, algorithm.value
+
 
 def encode_fingerprint(fingerprint, algorithm, base64=True):
     fp_array = (ctypes.c_int * len(fingerprint))()

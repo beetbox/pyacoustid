@@ -104,6 +104,9 @@ used when the Chromaprint library or fpcalc command-line tool cannot be found.
 Version History
 ---------------
 
+1.1.3
+  Accept `bytearray` objects in addition to other bytes-like types.
+
 1.1.2
   Fix a possible crash on Unicode text in Python 2 in a non-Unicode locale.
   Look for version "1" of the Chromaprint shared library file.

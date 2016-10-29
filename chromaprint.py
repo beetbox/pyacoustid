@@ -9,11 +9,11 @@ import ctypes
 
 
 if sys.version_info[0] >= 3:
-    BUFFER_TYPES = (memoryview,)
+    BUFFER_TYPES = (memoryview, bytearray,)
 elif sys.version_info[1] >= 7:
-    BUFFER_TYPES = (buffer, memoryview,)
+    BUFFER_TYPES = (buffer, memoryview, bytearray,)
 else:
-    BUFFER_TYPES = (buffer,)
+    BUFFER_TYPES = (buffer, bytearray,)
 
 
 # Find the base library and declare prototypes.

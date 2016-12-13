@@ -104,6 +104,10 @@ used when the Chromaprint library or fpcalc command-line tool cannot be found.
 Version History
 ---------------
 
+1.1.4
+  Fix an error on versions of the `fpcalc` tool that report the duration as a
+  fractional number.
+
 1.1.3
   Accept `bytearray` objects in addition to other bytes-like types.
 

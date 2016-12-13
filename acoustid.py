@@ -300,7 +300,7 @@ def _fingerprint_file_fpcalc(path, maxlength):
             raise FingerprintGenerationError("malformed fpcalc output")
         if parts[0] == b'DURATION':
             try:
-                duration = int(parts[1])
+                duration = float(parts[1])
             except ValueError:
                 raise FingerprintGenerationError("fpcalc duration not numeric")
         elif parts[0] == b'FINGERPRINT':

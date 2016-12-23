@@ -15,6 +15,7 @@
 from __future__ import division
 from __future__ import absolute_import
 
+import sys
 import os
 import json
 import requests
@@ -35,6 +36,12 @@ import threading
 import time
 import gzip
 from io import BytesIO
+if sys.version_info[0] == 3:
+    def iteritems(d, **kw):
+        return iter(d.items(**kw))
+else:
+    def iteritems(d, **kw):
+        return d.iteritems(**kw)
 
 
 API_BASE_URL = 'http://api.acoustid.org/v2/'
@@ -366,7 +373,7 @@ def submit(apikey, userkey, data):
     for i, d in enumerate(data):
         if "duration" not in d or "fingerprint" not in d:
             raise FingerprintSubmissionError("missing required parameters")
-        for k, v in d.iteritems():
+        for k, v in iteritems(d):
             args["%s.%s" % (k, i)] = v
 
     response = _api_request(_get_submit_url(), args)

@@ -104,6 +104,9 @@ used when the Chromaprint library or fpcalc command-line tool cannot be found.
 Version History
 ---------------
 
+1.1.5
+  Fix compatibility with Python 3 in the `submit` function.
+
 1.1.4
   Fix an error on versions of the `fpcalc` tool that report the duration as a
   fractional number.

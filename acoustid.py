@@ -366,7 +366,7 @@ def submit(apikey, userkey, data):
     for i, d in enumerate(data):
         if "duration" not in d or "fingerprint" not in d:
             raise FingerprintSubmissionError("missing required parameters")
-        for k, v in d.iteritems():
+        for k, v in d.items():
             args["%s.%s" % (k, i)] = v
 
     response = _api_request(_get_submit_url(), args)

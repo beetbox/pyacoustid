@@ -106,6 +106,8 @@ Version History
 
 1.1.5
   Fix compatibility with Python 3 in the `submit` function.
+  Errors in `submit` are now also handled correctly (i.e., they raise an
+  informative `WebServiceError` instead of a `TypeError`).
 
 1.1.4
   Fix an error on versions of the `fpcalc` tool that report the duration as a

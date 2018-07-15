@@ -39,8 +39,8 @@ from io import BytesIO
 
 API_BASE_URL = 'http://api.acoustid.org/v2/'
 DEFAULT_META = 'recordings'
-REQUEST_INTERVAL = 0.33 # 3 requests/second.
-MAX_AUDIO_LENGTH = 120 # Seconds.
+REQUEST_INTERVAL = 0.33  # 3 requests/second.
+MAX_AUDIO_LENGTH = 120  # Seconds.
 FPCALC_COMMAND = 'fpcalc'
 FPCALC_ENVVAR = 'FPCALC'
 
@@ -137,7 +137,7 @@ class CompressedHTTPAdapter(requests.adapters.HTTPAdapter):
 
 # Utilities.
 
-class _rate_limit(object):
+class _rate_limit(object):  # noqa: N801
     """A decorator that limits the rate at which the function may be
     called.  The rate is controlled by the REQUEST_INTERVAL module-level
     constant; set the value to zero to disable rate limiting. The
@@ -201,10 +201,10 @@ def fingerprint(samplerate, channels, pcmiter, maxlength=MAX_AUDIO_LENGTH):
         fper = chromaprint.Fingerprinter()
         fper.start(samplerate, channels)
 
-        position = 0 # Samples of audio fed to the fingerprinter.
+        position = 0  # Samples of audio fed to the fingerprinter.
         for block in pcmiter:
             fper.feed(block)
-            position += len(block) // 2 # 2 bytes/sample.
+            position += len(block) // 2  # 2 bytes/sample.
             if position >= endposition:
                 break
 

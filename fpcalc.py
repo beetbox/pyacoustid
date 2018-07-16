@@ -21,10 +21,12 @@ from __future__ import division
 from __future__ import absolute_import
 from __future__ import print_function
 
-import sys
 import argparse
+import sys
+
 import acoustid
 import chromaprint
+
 
 def main():
     parser = argparse.ArgumentParser()
@@ -37,7 +39,8 @@ def main():
                         help='audio file to be fingerprinted')
 
     args = parser.parse_args()
-    del sys.argv[1:] # to make gst not try to parse the args
+    # make gst not try to parse the args
+    del sys.argv[1:]
 
     first = True
     for i, path in enumerate(args.paths):
@@ -56,6 +59,7 @@ def main():
         print('FILE=%s' % path)
         print('DURATION=%d' % duration)
         print('FINGERPRINT=%s' % fp.decode('utf8'))
+
 
 if __name__ == '__main__':
     main()

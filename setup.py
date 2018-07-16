@@ -32,9 +32,8 @@ def _read(fn):
 
 setup(name='pyacoustid',
       version='1.1.5',
-      description=
-        'bindings for Chromaprint acoustic fingerprinting and the '
-        'Acoustid API',
+      description=('bindings for Chromaprint acoustic fingerprinting and the '
+                   'Acoustid API'),
       author='Adrian Sampson',
       author_email='adrian@radbox.org',
       url='https://github.com/sampsyo/pyacoustid',
@@ -42,7 +41,7 @@ setup(name='pyacoustid',
       platforms='ALL',
       long_description=_read('README.rst'),
 
-      install_requires = ['audioread', 'requests'],
+      install_requires=['audioread', 'requests'],
 
       py_modules=[
           'chromaprint',
@@ -55,4 +54,4 @@ setup(name='pyacoustid',
           'Programming Language :: Python :: 2',
           'Programming Language :: Python :: 3',
       ],
-)
+      )

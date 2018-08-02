@@ -366,6 +366,9 @@ def submit(apikey, userkey, data):
     for i, d in enumerate(data):
         if "duration" not in d or "fingerprint" not in d:
             raise FingerprintSubmissionError("missing required parameters")
+        if not isinstance(d["duration"], int):
+            # Cast duration to an integer
+            d["duration"] = int(float(d["duration"]))
         for k, v in d.items():
             args["%s.%s" % (k, i)] = v
 

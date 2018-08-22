@@ -104,6 +104,9 @@ used when the Chromaprint library or fpcalc command-line tool cannot be found.
 Version History
 ---------------
 
+1.1.6
+  In submission, avoid an error on non-integer durations.
+
 1.1.5
   Fix compatibility with Python 3 in the `submit` function.
   Errors in `submit` are now also handled correctly (i.e., they raise an

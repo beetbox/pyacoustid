@@ -112,6 +112,9 @@ def _get_submit_url():
     """Get the URL of the submission API endpoint."""
     return API_BASE_URL + 'submit'
 
+def _get_submission_status_url():
+    """Get the URL of the submission status API endpoint."""
+    return API_BASE_URL + 'submission_status'
 
 # Compressed HTTP request bodies.
 
@@ -382,3 +385,15 @@ def submit(apikey, userkey, data):
             raise WebServiceError("response: {0}".format(response))
         raise WebServiceError("error {0}: {1}".format(code, message))
     return response
+
+def get_submission_status(apikey, submission_id):
+    """Get the status of a submission to the acoustid server.
+    ``submission_id`` is the id of a fingerprint submission, as returned
+    in the response object of a call to the ``submit`` endpoint.
+    """
+    params = {
+        'format': 'json',
+        'client': apikey,
+        'id': submission_id,
+    }
+    return _api_request(_get_submission_status_url(), params)

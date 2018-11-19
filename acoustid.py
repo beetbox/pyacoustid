@@ -381,3 +381,4 @@ def submit(apikey, userkey, data):
         except KeyError:
             raise WebServiceError("response: {0}".format(response))
         raise WebServiceError("error {0}: {1}".format(code, message))
+    return response

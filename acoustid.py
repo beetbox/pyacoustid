@@ -354,6 +354,8 @@ def submit(apikey, userkey, data):
 
     If the required keys are not present in a dictionary, a
     FingerprintSubmissionError is raised.
+
+    Returns the parsed JSON response.
     """
     if isinstance(data, dict):
         data = [data]

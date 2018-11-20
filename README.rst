@@ -106,6 +106,8 @@ Version History
 
 1.1.6
   In submission, avoid an error on non-integer durations.
+  A new function, `get_submission_status`, abstracts the API endpoint for
+  monitoring submissions using the (new) result from the `submit` function.
 
 1.1.5
   Fix compatibility with Python 3 in the `submit` function.

@@ -1,5 +1,6 @@
 # Documentation.
 include README.rst
+include LICENSE
 # Example scripts.
 include aidmatch.py
 include fpcalc.py

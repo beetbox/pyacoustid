@@ -104,6 +104,9 @@ used when the Chromaprint library or fpcalc command-line tool cannot be found.
 Version History
 ---------------
 
+1.1.7
+  Include a LICENSE file.
+
 1.1.6
   In submission, avoid an error on non-integer durations.
   A new function, `get_submission_status`, abstracts the API endpoint for

@@ -314,28 +314,29 @@ def _fingerprint_file_fpcalc(path, maxlength):
     return duration, fp
 
 
-def fingerprint_file(path, maxlength=MAX_AUDIO_LENGTH, force_use_fpcalc=False):
+def fingerprint_file(path, maxlength=MAX_AUDIO_LENGTH, force_fpcalc=False):
     """Fingerprint a file either using the Chromaprint dynamic library
     or the fpcalc command-line tool, whichever is available. Returns the
     duration and the fingerprint.
+    Passing ``force_fpcalc`` as True will force file fingerprinting to be
+    performed using the fpcalc command-line tool.
     """
     path = os.path.abspath(os.path.expanduser(path))
-    if force_use_fpcalc:
-        return _fingerprint_file_fpcalc(path, maxlength)
+    if have_audioread and have_chromaprint and not force_fpcalc:
+        return _fingerprint_file_audioread(path, maxlength)
     else:
-        if have_audioread and have_chromaprint:
-            return _fingerprint_file_audioread(path, maxlength)
-        else:
-            return _fingerprint_file_fpcalc(path, maxlength)
+        return _fingerprint_file_fpcalc(path, maxlength)
 
 
-def match(apikey, path, meta=DEFAULT_META, parse=True, force_use_fpcalc=False):
+def match(apikey, path, meta=DEFAULT_META, parse=True, force_fpcalc=False):
     """Look up the metadata for an audio file. If ``parse`` is true,
     then ``parse_lookup_result`` is used to return an iterator over
     small tuple of relevant information; otherwise, the full parsed JSON
     response is returned.
+    Passing ``force_fpcalc`` as True will force file fingerprinting to be
+    performed using the fpcalc command-line tool.
     """
-    duration, fp = fingerprint_file(path, force_use_fpcalc=force_use_fpcalc)
+    duration, fp = fingerprint_file(path, force_fpcalc=force_fpcalc)
     response = lookup(apikey, fp, duration, meta)
     if parse:
         return parse_lookup_result(response)

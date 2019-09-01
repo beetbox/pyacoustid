@@ -75,8 +75,9 @@ parts of the process:
   audio data. Specify the audio parameters and give an iterable containing
   blocks of PCM data.
 - ``fingerprint_file(path)``: Using either the Chromaprint dynamic library or
-  the ``fpcalc`` command-line tool, fingerprint an audio file. Returns a pair
-  consisting of the file's duration and its fingerprint.
+  the ``fpcalc`` command-line tool, fingerprint an audio file. (You can use
+  ``force_fpcalc`` to use only the latter.) Returns a pair consisting of the
+  file's duration and its fingerprint.
 - ``lookup(apikey, fingerprint, duration)``: Make a request to the `Acoustid`_
   API to look up the fingerprint returned by the previous function. An API key
   is required, as is the length, in seconds, of the source audio. Returns a
@@ -103,6 +104,9 @@ used when the Chromaprint library or fpcalc command-line tool cannot be found.
 
 Version History
 ---------------
+
+1.2.0
+  Add a `force_fpcalc` option to `fingerprint_file` and `match`.
 
 1.1.7
   Include a LICENSE file.

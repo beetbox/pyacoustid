@@ -178,12 +178,12 @@ def _api_request(url, params):
         "Content-Type": "application/x-www-form-urlencoded"
     }
 
-    session = requests.Session()
-    session.mount('http://', CompressedHTTPAdapter())
-    try:
-        response = session.post(url, data=params, headers=headers)
-    except requests.exceptions.RequestException as exc:
-        raise WebServiceError("HTTP request failed: {0}".format(exc))
+    with requests.Session() as session:
+        session.mount('http://', CompressedHTTPAdapter())
+        try:
+            response = session.post(url, data=params, headers=headers)
+        except requests.exceptions.RequestException as exc:
+            raise WebServiceError("HTTP request failed: {0}".format(exc))
 
     try:
         return response.json()

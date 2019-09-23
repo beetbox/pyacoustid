@@ -107,6 +107,7 @@ Version History
 
 1.2.0
   Add a `force_fpcalc` option to `fingerprint_file` and `match`.
+  Avoid leaving a dangling socket after communicating with the server.
 
 1.1.7
   Include a LICENSE file.

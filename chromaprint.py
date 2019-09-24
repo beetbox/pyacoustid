@@ -17,7 +17,7 @@ else:
 # helper for python 3 memoryview/buffer support
 def to_buffer(data):
     if sys.version_info[0] >= 3:
-        return data.tobytes()
+        return bytes(data) # works for both bytearray and memoryview
     else:
         return str(data)
 

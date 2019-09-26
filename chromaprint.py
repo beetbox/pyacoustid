@@ -9,17 +9,14 @@ import ctypes
 
 if sys.version_info[0] >= 3:
     BUFFER_TYPES = (memoryview, bytearray,)
+    BYTES_TYPE = bytes
 elif sys.version_info[1] >= 7:
     BUFFER_TYPES = (buffer, memoryview, bytearray,)  # noqa: F821
+    BYTES_TYPE = str
 else:
     BUFFER_TYPES = (buffer, bytearray,)  # noqa: F821
+    BYTES_TYPE = str
 
-# helper for python 3 memoryview/buffer support
-def to_buffer(data):
-    if sys.version_info[0] >= 3:
-        return bytes(data) # works for both bytearray and memoryview
-    else:
-        return str(data)
 
 # Find the base library and declare prototypes.
 
@@ -124,7 +121,7 @@ class Fingerprinter(object):
         either a bytestring or a buffer object.
         """
         if isinstance(data, BUFFER_TYPES):
-            data = to_buffer(data)
+            data = BYTES_TYPE(data)
         elif not isinstance(data, bytes):
             raise TypeError('data must be bytes, buffer, or memoryview')
         _check(_libchromaprint.chromaprint_feed(

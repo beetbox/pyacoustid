@@ -186,7 +186,7 @@ def _api_request(url, params, timeout=None):
         except requests.exceptions.RequestException as exc:
             raise WebServiceError("HTTP request failed: {0}".format(exc))
         except requests.exceptions.ReadTimeout:
-            raise TimeoutError("HTTP timed out")
+            raise WebServiceError("HTTP timed out ({0}s)".format(timeout))
 
     try:
         return response.json()

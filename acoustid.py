@@ -168,10 +168,11 @@ class _rate_limit(object):  # noqa: N801
 
 
 @_rate_limit
-def _api_request(url, params):
+def _api_request(url, params, timeout=None):
     """Makes a POST request for the URL with the given form parameters,
     which are encoded as compressed form data, and returns a parsed JSON
     response. May raise a WebServiceError if the request fails.
+    If the specified timeout passes, then raises a TimeoutError.
     """
     headers = {
         'Accept-Encoding': 'gzip',
@@ -181,9 +182,11 @@ def _api_request(url, params):
     with requests.Session() as session:
         session.mount('http://', CompressedHTTPAdapter())
         try:
-            response = session.post(url, data=params, headers=headers)
+            response = session.post(url, data=params, headers=headers, timeout=timeout)
         except requests.exceptions.RequestException as exc:
             raise WebServiceError("HTTP request failed: {0}".format(exc))
+        except requests.exceptions.ReadTimeout:
+            raise WebServiceError("HTTP timed out ({0}s)".format(timeout))
 
     try:
         return response.json()
@@ -218,7 +221,7 @@ def fingerprint(samplerate, channels, pcmiter, maxlength=MAX_AUDIO_LENGTH):
         raise FingerprintGenerationError("fingerprint calculation failed")
 
 
-def lookup(apikey, fingerprint, duration, meta=DEFAULT_META):
+def lookup(apikey, fingerprint, duration, meta=DEFAULT_META, timeout=None):
     """Look up a fingerprint with the Acoustid Web service. Returns the
     Python object reflecting the response JSON data.
     """
@@ -229,7 +232,7 @@ def lookup(apikey, fingerprint, duration, meta=DEFAULT_META):
         'fingerprint': fingerprint,
         'meta': meta,
     }
-    return _api_request(_get_lookup_url(), params)
+    return _api_request(_get_lookup_url(), params, timeout)
 
 
 def parse_lookup_result(data):
@@ -329,7 +332,7 @@ def fingerprint_file(path, maxlength=MAX_AUDIO_LENGTH, force_fpcalc=False):
         return _fingerprint_file_fpcalc(path, maxlength)
 
 
-def match(apikey, path, meta=DEFAULT_META, parse=True, force_fpcalc=False):
+def match(apikey, path, meta=DEFAULT_META, parse=True, force_fpcalc=False, timeout=None):
     """Look up the metadata for an audio file. If ``parse`` is true,
     then ``parse_lookup_result`` is used to return an iterator over
     small tuple of relevant information; otherwise, the full parsed JSON
@@ -338,14 +341,14 @@ def match(apikey, path, meta=DEFAULT_META, parse=True, force_fpcalc=False):
     true, only the latter will be used.
     """
     duration, fp = fingerprint_file(path, force_fpcalc=force_fpcalc)
-    response = lookup(apikey, fp, duration, meta)
+    response = lookup(apikey, fp, duration, meta, timeout)
     if parse:
         return parse_lookup_result(response)
     else:
         return response
 
 
-def submit(apikey, userkey, data):
+def submit(apikey, userkey, data, timeout=None):
     """Submit a fingerprint to the acoustid server. The ``apikey`` and
     ``userkey`` parameters are API keys for the application and the
     submitting user, respectively.
@@ -383,7 +386,7 @@ def submit(apikey, userkey, data):
         for k, v in d.items():
             args["%s.%s" % (k, i)] = v
 
-    response = _api_request(_get_submit_url(), args)
+    response = _api_request(_get_submit_url(), args, timeout)
     if response.get('status') != 'ok':
         try:
             code = response['error']['code']
@@ -394,7 +397,7 @@ def submit(apikey, userkey, data):
     return response
 
 
-def get_submission_status(apikey, submission_id):
+def get_submission_status(apikey, submission_id, timeout=None):
     """Get the status of a submission to the acoustid server.
     ``submission_id`` is the id of a fingerprint submission, as returned
     in the response object of a call to the ``submit`` endpoint.
@@ -404,4 +407,4 @@ def get_submission_status(apikey, submission_id):
         'client': apikey,
         'id': submission_id,
     }
-    return _api_request(_get_submission_status_url(), params)
+    return _api_request(_get_submission_status_url(), params, timeout)

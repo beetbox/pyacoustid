@@ -109,6 +109,7 @@ Version History
   Add a `force_fpcalc` option to `fingerprint_file` and `match`.
   Avoid leaving a dangling socket after communicating with the server.
   Fix a crash when passing a `memoryview` object to the fingerprinter.
+  API requests can now optionally time out.
 
 1.1.7
   Include a LICENSE file.

@@ -182,11 +182,14 @@ def _api_request(url, params, timeout=None):
     with requests.Session() as session:
         session.mount('http://', CompressedHTTPAdapter())
         try:
-            response = session.post(url, data=params, headers=headers, timeout=timeout)
+            response = session.post(url, data=params, headers=headers,
+                                    timeout=timeout)
         except requests.exceptions.RequestException as exc:
             raise WebServiceError("HTTP request failed: {0}".format(exc))
         except requests.exceptions.ReadTimeout:
-            raise WebServiceError("HTTP timed out ({0}s)".format(timeout))
+            raise WebServiceError(
+                "HTTP request timed out ({0}s)".format(timeout)
+            )
 
     try:
         return response.json()
@@ -332,7 +335,8 @@ def fingerprint_file(path, maxlength=MAX_AUDIO_LENGTH, force_fpcalc=False):
         return _fingerprint_file_fpcalc(path, maxlength)
 
 
-def match(apikey, path, meta=DEFAULT_META, parse=True, force_fpcalc=False, timeout=None):
+def match(apikey, path, meta=DEFAULT_META, parse=True, force_fpcalc=False,
+          timeout=None):
     """Look up the metadata for an audio file. If ``parse`` is true,
     then ``parse_lookup_result`` is used to return an iterator over
     small tuple of relevant information; otherwise, the full parsed JSON

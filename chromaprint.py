@@ -6,6 +6,7 @@
 
 import sys
 import ctypes
+import ctypes.util
 
 if sys.version_info[0] >= 3:
     BUFFER_TYPES = (memoryview, bytearray,)
@@ -31,9 +32,19 @@ def _guess_lib_name():
     return ('libchromaprint.so.1', 'libchromaprint.so.0')
 
 
+def _load_library(name):
+    if sys.platform == 'win32':
+        try:
+            return ctypes.cdll.LoadLibrary(ctypes.util.find_library(name))
+        except TypeError:
+            raise OSError()
+    else:
+        return ctypes.cdll.LoadLibrary(name)
+
+
 for name in _guess_lib_name():
     try:
-        _libchromaprint = ctypes.cdll.LoadLibrary(name)
+        _libchromaprint = _load_library(name)
         break
     except OSError:
         pass

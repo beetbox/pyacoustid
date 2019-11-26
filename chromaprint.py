@@ -33,21 +33,26 @@ def _guess_lib_name():
 
 
 def _load_library(name):
+    """Try to load a dynamic library with ctypes, or return None if the
+    library is not available.
+    """
     if sys.platform == 'win32':
-        try:
-            return ctypes.cdll.LoadLibrary(ctypes.util.find_library(name))
-        except TypeError:
-            raise OSError()
-    else:
+        # On Windows since Python 3.8, we need an extra call to
+        # `find_library` to search standard library paths.
+        name = ctypes.util.find_library(name)
+        if not name:
+            return None
+
+    try:
         return ctypes.cdll.LoadLibrary(name)
+    except OSError:
+        return None
 
 
 for name in _guess_lib_name():
-    try:
-        _libchromaprint = _load_library(name)
+    _libchromaprint = _load_library(name)
+    if _libchromaprint:
         break
-    except OSError:
-        pass
 else:
     raise ImportError("couldn't find libchromaprint")
 

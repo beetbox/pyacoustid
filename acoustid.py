@@ -118,6 +118,11 @@ def _get_submission_status_url():
     return API_BASE_URL + 'submission_status'
 
 
+def _get_track_by_mbid_url():
+    """Get the URL of the track-by-MBID API endpoint."""
+    return API_BASE_URL + 'track/list_by_mbid'
+
+
 # Compressed HTTP request bodies.
 
 def _compress(data):
@@ -412,3 +417,54 @@ def get_submission_status(apikey, submission_id, timeout=None):
         'id': submission_id,
     }
     return _api_request(_get_submission_status_url(), params, timeout)
+
+
+def track_by_mbid(release_ids, disabled=False, timeout=None):
+    """Get AcoustID track id(s) corresponding to the given MusicBrainz
+    release id(s).
+    If ``release_ids`` is a str, a list of strs (possibly empty) is returned.
+    If ``release_ids`` is a list of strs, a dict mapping each str in that list
+    to a (possibly empty) list of strs is returned.
+    If ``disabled`` is True, those lists of str are instead pairs of lists of
+    strs, the first containing the enabled AcoustID track ids and the second the
+    disabled track ids."""
+
+    # Avoid isinstance(release_ids, list) in case the caller wants to pass some
+    # other sequence.  We let requests convert the sequence to a repeated param.
+    batch = not isinstance(release_ids, str)
+    params = {
+        'format': 'json',
+        'mbid': release_ids,
+        'disabled': '1' if disabled else '0',
+        'batch': '1' if batch else '0',
+        # this route doesn't require an API key
+    }
+
+    response = _api_request(_get_track_by_mbid_url(), params, timeout)
+    # Copied from submit, above.
+    if response.get('status') != 'ok':
+        try:
+            code = response['error']['code']
+            message = response['error']['message']
+        except KeyError:
+            raise WebServiceError("response: {0}".format(response))
+        raise WebServiceError("error {0}: {1}".format(code, message))
+
+    # When disabled is true, we defensively check for disabled: false even
+    # though AcoustID currently omits that attribute for enabled MBIDs.
+    if batch:
+        mbids = response['mbids']
+        if disabled:
+            return {m['mbid']:
+                    ([x['id'] for x in m['tracks'] if 'disabled' not in x or not x['disabled']],
+                     [x['id'] for x in m['tracks'] if 'disabled' in x and x['disabled']])
+                    for m in mbids}
+        else:
+            return {m['mbid']: [x['id'] for x in m['tracks']] for m in mbids}
+    else:
+        tracks = response['tracks']
+        if disabled:
+            return ([x['id'] for x in tracks if 'disabled' not in x or not x['disabled']],
+                    [x['id'] for x in tracks if 'disabled' in x and x['disabled']])
+        else:
+            return [x['id'] for x in tracks]

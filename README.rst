@@ -6,8 +6,8 @@ high-quality, open-source acoustic fingerprinting system. This package provides
 Python bindings for both the fingerprinting algorithm library, which is written
 in C but portable, and the Web service, which provides fingerprint lookups.
 
-.. _Chromaprint: http://acoustid.org/
-.. _Acoustid: http://acoustid.org/chromaprint
+.. _Chromaprint: http://acoustid.org/chromaprint
+.. _Acoustid: http://acoustid.org/
 
 
 Installation

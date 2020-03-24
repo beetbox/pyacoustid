@@ -93,6 +93,11 @@ _libchromaprint.chromaprint_encode_fingerprint.argtypes = \
      ctypes.POINTER(ctypes.c_int), ctypes.c_int)
 _libchromaprint.chromaprint_encode_fingerprint.restype = ctypes.c_int
 
+_libchromaprint.chromaprint_hash_fingerprint.argtypes = \
+    (ctypes.POINTER(ctypes.c_int32), ctypes.c_int,
+     ctypes.POINTER(ctypes.c_uint32))
+_libchromaprint.chromaprint_hash_fingerprint.restype = ctypes.c_int
+
 _libchromaprint.chromaprint_dealloc.argtypes = (ctypes.c_void_p,)
 _libchromaprint.chromaprint_dealloc.restype = None
 
@@ -184,3 +189,14 @@ def encode_fingerprint(fingerprint, algorithm, base64=True):
     result = result_ptr[:result_size.value]
     _libchromaprint.chromaprint_dealloc(result_ptr)
     return result
+
+
+def hash_fingerprint(fingerprint):
+    fp_array = (ctypes.c_int * len(fingerprint))()
+    for i in range(len(fingerprint)):
+        fp_array[i] = fingerprint[i]
+    result_hash = ctypes.c_uint32()
+    _check(_libchromaprint.chromaprint_hash_fingerprint(
+        fp_array, len(fingerprint), ctypes.byref(result_hash)
+    ))
+    return result_hash.value

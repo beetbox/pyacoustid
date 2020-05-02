@@ -111,6 +111,7 @@ Version History
   Fix a crash when passing a `memoryview` object to the fingerprinter.
   API requests can now optionally time out.
   More reliably find the library on Windows on Python 3.8.
+  Add a `hash_fingerprint` function to the low-level library.
 
 1.1.7
   Include a LICENSE file.

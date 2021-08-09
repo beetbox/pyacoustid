@@ -35,10 +35,11 @@ import threading
 import time
 import gzip
 from io import BytesIO
+from urllib.parse import urlencode
 
 
 API_BASE_URL = 'http://api.acoustid.org/v2/'
-DEFAULT_META = 'recordings'
+DEFAULT_META = ['recordings']
 REQUEST_INTERVAL = 0.33  # 3 requests/second.
 MAX_AUDIO_LENGTH = 120  # Seconds.
 FPCALC_COMMAND = 'fpcalc'
@@ -179,10 +180,14 @@ def _api_request(url, params, timeout=None):
         "Content-Type": "application/x-www-form-urlencoded"
     }
 
+    params['meta'] = '+'.join(params['meta'])
+
     with requests.Session() as session:
         session.mount('http://', CompressedHTTPAdapter())
         try:
-            response = session.post(url, data=params, headers=headers,
+            response = session.post(url, 
+                                    data=urlencode(params, safe='+'),
+                                    headers=headers,
                                     timeout=timeout)
         except requests.exceptions.RequestException as exc:
             raise WebServiceError("HTTP request failed: {0}".format(exc))

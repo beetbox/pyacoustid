@@ -180,11 +180,11 @@ def _api_request(url, params, timeout=None):
         "Content-Type": "application/x-www-form-urlencoded"
     }
 
-    params['meta'] = '+'.join(params['meta'])
-
     with requests.Session() as session:
         session.mount('http://', CompressedHTTPAdapter())
         try:
+            if isinstance(params['meta'], list):
+                params['meta'] = ' '.join(str(item) for item in params['meta'])
             response = session.post(url, 
                                     data=urlencode(params, safe='+'),
                                     headers=headers,

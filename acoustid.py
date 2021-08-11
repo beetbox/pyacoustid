@@ -231,7 +231,10 @@ def fingerprint(samplerate, channels, pcmiter, maxlength=MAX_AUDIO_LENGTH):
 
 def lookup(apikey, fingerprint, duration, meta=DEFAULT_META, timeout=None):
     """Look up a fingerprint with the Acoustid Web service. Returns the
-    Python object reflecting the response JSON data.
+    Python object reflecting the response JSON data. To get more data back
+    ``meta`` can be a list of strings or a '+' or ' ' concatenated string of 
+    keywords. Those can be recordings, recordingids, releases, releaseids, 
+    releasegroups, releasegroupids, tracks, compress, usermeta, sources.
     """
     params = {
         'format': 'json',
@@ -347,7 +350,10 @@ def match(apikey, path, meta=DEFAULT_META, parse=True, force_fpcalc=False,
     small tuple of relevant information; otherwise, the full parsed JSON
     response is returned. Fingerprinting uses either the Chromaprint
     library or the fpcalc command-line tool; if ``force_fpcalc`` is
-    true, only the latter will be used.
+    true, only the latter will be used. To get more data back ``meta`` can be 
+    a list of strings or a '+' or ' ' concatenated string of keywords.
+    Those can be recordings, recordingids, releases, releaseids, releasegroups, 
+    releasegroupids, tracks, compress, usermeta, sources.
     """
     duration, fp = fingerprint_file(path, force_fpcalc=force_fpcalc)
     response = lookup(apikey, fp, duration, meta, timeout)

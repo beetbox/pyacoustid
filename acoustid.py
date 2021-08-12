@@ -38,7 +38,7 @@ from io import BytesIO
 
 
 API_BASE_URL = 'http://api.acoustid.org/v2/'
-DEFAULT_META = 'recordings'
+DEFAULT_META = ['recordings']
 REQUEST_INTERVAL = 0.33  # 3 requests/second.
 MAX_AUDIO_LENGTH = 120  # Seconds.
 FPCALC_COMMAND = 'fpcalc'
@@ -182,7 +182,11 @@ def _api_request(url, params, timeout=None):
     with requests.Session() as session:
         session.mount('http://', CompressedHTTPAdapter())
         try:
-            response = session.post(url, data=params, headers=headers,
+            if isinstance(params['meta'], list):
+                params['meta'] = ' '.join(params['meta'])
+            response = session.post(url,
+                                    data=params,
+                                    headers=headers,
                                     timeout=timeout)
         except requests.exceptions.RequestException as exc:
             raise WebServiceError("HTTP request failed: {0}".format(exc))
@@ -226,7 +230,10 @@ def fingerprint(samplerate, channels, pcmiter, maxlength=MAX_AUDIO_LENGTH):
 
 def lookup(apikey, fingerprint, duration, meta=DEFAULT_META, timeout=None):
     """Look up a fingerprint with the Acoustid Web service. Returns the
-    Python object reflecting the response JSON data.
+    Python object reflecting the response JSON data. To get more data
+    back, ``meta`` can be a list of keywords from this list: recordings,
+    recordingids, releases, releaseids, releasegroups, releasegroupids,
+    tracks, compress, usermeta, sources.
     """
     params = {
         'format': 'json',
@@ -342,7 +349,10 @@ def match(apikey, path, meta=DEFAULT_META, parse=True, force_fpcalc=False,
     small tuple of relevant information; otherwise, the full parsed JSON
     response is returned. Fingerprinting uses either the Chromaprint
     library or the fpcalc command-line tool; if ``force_fpcalc`` is
-    true, only the latter will be used.
+    true, only the latter will be used. To get more data back, ``meta``
+    can be a list of keywords from this list: recordings, recordingids,
+    releases, releaseids, releasegroups, releasegroupids, tracks,
+    compress, usermeta, sources.
     """
     duration, fp = fingerprint_file(path, force_fpcalc=force_fpcalc)
     response = lookup(apikey, fp, duration, meta, timeout)

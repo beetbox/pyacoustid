@@ -105,6 +105,10 @@ used when the Chromaprint library or fpcalc command-line tool cannot be found.
 Version History
 ---------------
 
+1.2.1
+  The `meta` parameter to some API functions can now be a list (instead of
+  just a single string).
+
 1.2.0
   Add a `force_fpcalc` option to `fingerprint_file` and `match`.
   Avoid leaving a dangling socket after communicating with the server.

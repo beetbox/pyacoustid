@@ -105,6 +105,10 @@ used when the Chromaprint library or fpcalc command-line tool cannot be found.
 Version History
 ---------------
 
+1.2.2
+  Fix a regression in the previous version that caused a `KeyError` crash when
+  calling `submit`.
+
 1.2.1
   The `meta` parameter to some API functions can now be a list (instead of
   just a single string).

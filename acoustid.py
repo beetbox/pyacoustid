@@ -182,7 +182,7 @@ def _api_request(url, params, timeout=None):
     with requests.Session() as session:
         session.mount('http://', CompressedHTTPAdapter())
         try:
-            if isinstance(params['meta'], list):
+            if isinstance(params.get('meta'), list):
                 params['meta'] = ' '.join(params['meta'])
             response = session.post(url,
                                     data=params,

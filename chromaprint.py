@@ -164,6 +164,16 @@ class Fingerprinter(object):
 
 
 def decode_fingerprint(data, base64=True):
+    """Calls chromaprint decode_fingerprint to uncompress and optionally decode a fingerprint
+
+        Parameters:
+            data (bytes): an encoded fingerprint
+            base64 (boolean): flag for optional base64 decoding
+
+
+        Returns:
+            Tuple(Array(int32), int): the decoded raw fingerprint (array of 32-bit integers), chromaprint algorithm used to generate the fingerprint
+    """
     result_ptr = ctypes.POINTER(ctypes.c_int32)()
     result_size = ctypes.c_int()
     algorithm = ctypes.c_int()
@@ -175,8 +185,18 @@ def decode_fingerprint(data, base64=True):
     _libchromaprint.chromaprint_dealloc(result_ptr)
     return result, algorithm.value
 
-
 def encode_fingerprint(fingerprint, algorithm, base64=True):
+    """Calls chromaprint encode_fingerprint to compress and optionally encode a fingerprint
+
+        Parameters:
+            fingerprint (bytes): an  fingerprint
+            algorithm (int): flag for algorithm to use
+            base64 (boolean): flag for optional base64 decoding
+
+
+        Returns:
+            bytes: an encoded fingerprint 
+    """
     fp_array = (ctypes.c_int * len(fingerprint))()
     for i in range(len(fingerprint)):
         fp_array[i] = fingerprint[i]
@@ -198,7 +218,31 @@ def hash_fingerprint(fingerprint):
     will also be similar. If they are significantly different, their hashes
     will most likely be significantly different as well, but you can't rely
     on that.
+
     You compare two hashes by counting the bits in which they differ.
+
+    Returns
+        int32: a 32 bit hash for a raw fingerprint 
+
+    Example Usage:
+        # Acquire an audiofingerprint using chromaprint.Fingerprinter class
+        audio_fingerprint = ... first audio file 
+
+        # Decode the fingerprint using decoder
+        decoded_fingerprint, algo = chromaprint.decode_fingerprint(audio_fingerprint)
+
+        # Hash the fingerprint 
+        first_fingerprint_hash = chromaprint.hash_fingerprint(decoded_fingerprint)
+
+        second_fingerprint_hash = ... repeat all the above for a second audio file
+
+        # Example comparison visually
+        format(first_fingerprint_hash, 'b')
+        # 010101
+        format(second_fingerpring_hash, 'b')
+        # 000001
+
+        # Not a match!
     """
 
     fp_array = (ctypes.c_int * len(fingerprint))()

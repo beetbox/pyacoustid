@@ -164,15 +164,18 @@ class Fingerprinter(object):
 
 
 def decode_fingerprint(data, base64=True):
-    """Calls chromaprint decode_fingerprint to uncompress and optionally decode a fingerprint
+    """Uncompress and optionally decode a fingerprint
 
-        Parameters:
-            data (bytes): an encoded fingerprint
-            base64 (boolean): flag for optional base64 decoding
+    Args:
+        data: 
+            An encoded fingerprint in bytes
+        base64: 
+            A boolean flag for optional base64 decoding
 
-
-        Returns:
-            Tuple(Array(int32), int): the decoded raw fingerprint (array of 32-bit integers), chromaprint algorithm used to generate the fingerprint
+    Returns:
+        A tuple containing the decoded raw fingerprint as an array
+        of 32-bit integers, and an int representing the chromaprint 
+        algorithm used to generate the fingerprint. 
     """
     result_ptr = ctypes.POINTER(ctypes.c_int32)()
     result_size = ctypes.c_int()
@@ -186,16 +189,19 @@ def decode_fingerprint(data, base64=True):
     return result, algorithm.value
 
 def encode_fingerprint(fingerprint, algorithm, base64=True):
-    """Calls chromaprint encode_fingerprint to compress and optionally encode a fingerprint
+    """Compress and optionally encode a fingerprint
+    
+    Args:
+        fingerprint: 
+            A bytes string representing the fingerprint to encode
+        algorithm: 
+            An int flag for chroma algorithm to use
+        base64: 
+            A boolean flag for optional base64 decoding
 
-        Parameters:
-            fingerprint (bytes): an  fingerprint
-            algorithm (int): flag for algorithm to use
-            base64 (boolean): flag for optional base64 decoding
 
-
-        Returns:
-            bytes: an encoded fingerprint 
+    Returns:
+        A byte string representing an encoded fingerprint
     """
     fp_array = (ctypes.c_int * len(fingerprint))()
     for i in range(len(fingerprint)):
@@ -222,7 +228,7 @@ def hash_fingerprint(fingerprint):
     You compare two hashes by counting the bits in which they differ.
 
     Returns
-        int32: a 32 bit hash for a raw fingerprint 
+        A 32-bit integer hash for the raw fingerprint
 
     Example Usage:
         # Acquire an audiofingerprint using chromaprint.Fingerprinter class
@@ -231,18 +237,19 @@ def hash_fingerprint(fingerprint):
         # Decode the fingerprint using decoder
         decoded_fingerprint, algo = chromaprint.decode_fingerprint(audio_fingerprint)
 
-        # Hash the fingerprint 
+        # Hash the fingerprint using chromaprint
         first_fingerprint_hash = chromaprint.hash_fingerprint(decoded_fingerprint)
 
+        # Perform the same steps as above but with a different audiofile
         second_fingerprint_hash = ... repeat all the above for a second audio file
 
-        # Example comparison visually
-        format(first_fingerprint_hash, 'b')
-        # 010101
-        format(second_fingerpring_hash, 'b')
-        # 000001
+        # Compare the two audio fingerprint hashes' hamming weight (aka. POPCNT)
+        first_fp_binary = format(first_fingerprint_hash,'b')
+        second_fp_binary = format(second_fingerprint_hash,'b')
 
-        # Not a match!
+        # The returns value will be between 0 and 32 and represent the POPCNT.
+        # A value > 15 indicates the two fingerprints are very different.
+        bin(int(first_fp_binary,2)^int(second_fp_binary,2)).count
     """
 
     fp_array = (ctypes.c_int * len(fingerprint))()

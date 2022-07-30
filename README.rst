@@ -105,6 +105,10 @@ used when the Chromaprint library or fpcalc command-line tool cannot be found.
 Version History
 ---------------
 
+1.2.3
+  Fix the signedness of numbers returned from
+  `chromaprint_decode_fingerprint`.
+
 1.2.2
   Fix a regression in the previous version that caused a `KeyError` crash when
   calling `submit`.

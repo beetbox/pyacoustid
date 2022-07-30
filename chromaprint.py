@@ -83,7 +83,7 @@ _libchromaprint.chromaprint_get_fingerprint.restype = ctypes.c_int
 
 _libchromaprint.chromaprint_decode_fingerprint.argtypes = \
     (ctypes.POINTER(ctypes.c_char), ctypes.c_int,
-     ctypes.POINTER(ctypes.POINTER(ctypes.c_int32)),
+     ctypes.POINTER(ctypes.POINTER(ctypes.c_uint32)),
      ctypes.POINTER(ctypes.c_int), ctypes.POINTER(ctypes.c_int), ctypes.c_int)
 _libchromaprint.chromaprint_decode_fingerprint.restype = ctypes.c_int
 
@@ -172,10 +172,10 @@ def decode_fingerprint(data, base64=True):
 
     Returns:
         A tuple containing the decoded raw fingerprint as an array
-        of 32-bit integers, and an int representing the chromaprint
+        of unsigned 32-bit integers, and an int representing the chromaprint
         algorithm used to generate the fingerprint.
     """
-    result_ptr = ctypes.POINTER(ctypes.c_int32)()
+    result_ptr = ctypes.POINTER(ctypes.c_uint32)()
     result_size = ctypes.c_int()
     algorithm = ctypes.c_int()
     _check(_libchromaprint.chromaprint_decode_fingerprint(

@@ -265,9 +265,11 @@ def parse_lookup_result(data):
 
         for recording in result['recordings']:
             # Get the artist if available.
-            if recording.get('artists'):
-                names = [artist['name'] for artist in recording['artists']]
-                artist_name = '; '.join(names)
+            artists = recording.get("artists")
+            if artists:
+                artist_name = ""
+                for artist in artists:
+                    artist_name += artist["name"] + artist.get("joinphrase", "")
             else:
                 artist_name = None
 

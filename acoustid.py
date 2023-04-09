@@ -248,9 +248,10 @@ def lookup(apikey, fingerprint, duration, meta=DEFAULT_META, timeout=None):
 def parse_lookup_result(data):
     """Given a parsed JSON response, generate tuples containing the match
     score, the MusicBrainz recording ID, the title of the recording, and
-    the name of the recording's first artist. (If an artist is not
-    available, the last item is None.) If the response is incomplete,
-    raises a WebServiceError.
+    the artist name of the recording. Multiple artist names are joined
+    by join phrases as displayed on web page. If an artist is not available,
+    the last item is None. If the response is incomplete, raises a
+    WebServiceError.
     """
     if data['status'] != 'ok':
         raise WebServiceError("status: %s" % data['status'])
@@ -265,9 +266,14 @@ def parse_lookup_result(data):
 
         for recording in result['recordings']:
             # Get the artist if available.
-            if recording.get('artists'):
-                names = [artist['name'] for artist in recording['artists']]
-                artist_name = '; '.join(names)
+            artists = recording.get("artists")
+            if artists:
+                artist_name = "".join(
+                    [
+                        artist["name"] + artist.get("joinphrase", "")
+                        for artist in artists
+                    ]
+                )
             else:
                 artist_name = None
 

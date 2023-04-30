@@ -20,13 +20,16 @@ import json
 import requests
 import contextlib
 import errno
+
 try:
     import audioread
+
     have_audioread = True
 except ImportError:
     have_audioread = False
 try:
     import chromaprint
+
     have_chromaprint = True
 except ImportError:
     have_chromaprint = False
@@ -35,7 +38,6 @@ import threading
 import time
 import gzip
 from io import BytesIO
-
 
 API_BASE_URL = 'http://api.acoustid.org/v2/'
 DEFAULT_META = ['recordings']
@@ -71,6 +73,7 @@ class WebServiceError(AcoustidError):
     sent by the acoustid server, then the ``code`` field contains the
     acoustid error code.
     """
+
     def __init__(self, message, response=None):
         """Create an error for the given HTTP response body, if
         provided, with the ``message`` as a fallback.
@@ -132,6 +135,7 @@ class CompressedHTTPAdapter(requests.adapters.HTTPAdapter):
     """An `HTTPAdapter` that compresses request bodies with gzip. The
     Content-Encoding header is set accordingly.
     """
+
     def add_headers(self, request, **kwargs):
         body = request.body
         if not isinstance(body, bytes):
@@ -149,6 +153,7 @@ class _rate_limit(object):  # noqa: N801
     limiting is thread-safe; only one thread may be in the function at a
     time (acts like a monitor in this sense).
     """
+
     def __init__(self, fun):
         self.fun = fun
         self.last_call = 0.0
@@ -346,6 +351,55 @@ def fingerprint_file(path, maxlength=MAX_AUDIO_LENGTH, force_fpcalc=False):
         return _fingerprint_file_audioread(path, maxlength)
     else:
         return _fingerprint_file_fpcalc(path, maxlength)
+
+
+
+
+
+
+
+def compare_fingerprints(a, b) -> float:
+    """
+    compare two fingerprints locally
+    :param a: fingerprint of acoustid.fingerprint_file(filepath_a)
+    :param b: second fingerprint of acoustid.fingerprint_file(filepath_b)
+    :return:  similarity score [0,1]
+    """
+
+    if not have_chromaprint:
+        raise ModuleNotFoundError("function needs chromaprint")
+
+    # decompress fingerprints
+    a = chromaprint.decode_fingerprint(a)[0]
+    b = chromaprint.decode_fingerprint(b)[0]
+    a = list(map(int, a))
+    b = list(map(int, b))
+
+    ACOUSTID_MAX_BIT_ERROR = 2
+    ACOUSTID_MAX_ALIGN_OFFSET = 120
+
+    def popcount(x):
+        return bin(x).count('1')
+
+    def match_fingerprints(a, b):
+        asize = len(a)
+        bsize = len(b)
+        numcounts = asize + bsize + 1
+        counts = [0] * numcounts
+
+        for i in range(asize):
+            jbegin = max(0, i - ACOUSTID_MAX_ALIGN_OFFSET)
+            jend = min(bsize, i + ACOUSTID_MAX_ALIGN_OFFSET)
+            for j in range(jbegin, jend):
+                biterror = popcount(a[i] ^ b[j]) # xor operator
+                if biterror <= ACOUSTID_MAX_BIT_ERROR:
+                    offset = i - j + bsize
+                    counts[offset] += 1
+
+        topcount = counts.max()
+        return topcount / min(asize, bsize)
+
+    return match_fingerprints(a, b)
 
 
 def match(apikey, path, meta=DEFAULT_META, parse=True, force_fpcalc=False,

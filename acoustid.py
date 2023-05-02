@@ -14,6 +14,7 @@
 
 from __future__ import division
 from __future__ import absolute_import
+from typing import List
 
 import os
 import json
@@ -353,11 +354,18 @@ def fingerprint_file(path, maxlength=MAX_AUDIO_LENGTH, force_fpcalc=False):
         return _fingerprint_file_fpcalc(path, maxlength)
 
 
-def _popcount(x):
+def _popcount(x) -> int:
+    """count 1s in binary encoding of x"""
     return bin(x).count('1')
 
 
-def _match_fingerprints(a, b):
+def _match_fingerprints(a: List[int], b:  List[int]) -> float:
+    """ bitwhise comparison of Chromaprint/acoustid fingerpints
+    more info on how the fingerpints work https://essentia.upf.edu/tutorial_fingerprinting_chromaprint.html
+    :param a: decompressed fingerprint
+    :param b: decompressed fingerprint
+    :return:  similarity score [0,1]
+    """
     asize = len(a)
     bsize = len(b)
     numcounts = asize + bsize + 1
@@ -375,8 +383,7 @@ def _match_fingerprints(a, b):
     return topcount / min(asize, bsize)
 
 def compare_fingerprints(a, b) -> float:
-    """
-    compare two fingerprints locally
+    """ compare two fingerprints locally
     :param a: fingerprint of acoustid.fingerprint_file(filepath_a)
     :param b: second fingerprint of acoustid.fingerprint_file(filepath_b)
     :return:  similarity score [0,1]

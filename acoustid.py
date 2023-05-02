@@ -45,6 +45,8 @@ REQUEST_INTERVAL = 0.33  # 3 requests/second.
 MAX_AUDIO_LENGTH = 120  # Seconds.
 FPCALC_COMMAND = 'fpcalc'
 FPCALC_ENVVAR = 'FPCALC'
+MAX_BIT_ERROR = 2  # comparison settings
+MAX_ALIGN_OFFSET = 120
 
 
 # Exceptions.
@@ -73,7 +75,6 @@ class WebServiceError(AcoustidError):
     sent by the acoustid server, then the ``code`` field contains the
     acoustid error code.
     """
-
     def __init__(self, message, response=None):
         """Create an error for the given HTTP response body, if
         provided, with the ``message`` as a fallback.
@@ -153,7 +154,6 @@ class _rate_limit(object):  # noqa: N801
     limiting is thread-safe; only one thread may be in the function at a
     time (acts like a monitor in this sense).
     """
-
     def __init__(self, fun):
         self.fun = fun
         self.last_call = 0.0
@@ -352,6 +352,28 @@ def fingerprint_file(path, maxlength=MAX_AUDIO_LENGTH, force_fpcalc=False):
     else:
         return _fingerprint_file_fpcalc(path, maxlength)
 
+
+def _popcount(x):
+    return bin(x).count('1')
+
+
+def _match_fingerprints(a, b):
+    asize = len(a)
+    bsize = len(b)
+    numcounts = asize + bsize + 1
+    counts = [0] * numcounts
+
+    for i in range(asize):
+        jbegin = max(0, i - MAX_ALIGN_OFFSET)
+        jend = min(bsize, i + MAX_ALIGN_OFFSET)
+        for j in range(jbegin, jend):
+            biterror = _popcount(a[i] ^ b[j])  # xor operator
+            if biterror <= MAX_BIT_ERROR:
+                offset = i - j + bsize
+                counts[offset] += 1
+    topcount = counts.max()
+    return topcount / min(asize, bsize)
+
 def compare_fingerprints(a, b) -> float:
     """
     compare two fingerprints locally
@@ -359,39 +381,13 @@ def compare_fingerprints(a, b) -> float:
     :param b: second fingerprint of acoustid.fingerprint_file(filepath_b)
     :return:  similarity score [0,1]
     """
-
     if not have_chromaprint:
         raise ModuleNotFoundError("function needs chromaprint")
 
     # decompress fingerprints
     a = [int(x) for x in chromaprint.decode_fingerprint(a)[0]]
     b = [int(x) for x in chromaprint.decode_fingerprint(b)[0]]
-
-    MAX_BIT_ERROR = 2
-    MAX_ALIGN_OFFSET = 120
-
-    def popcount(x):
-        return bin(x).count('1')
-
-    def match_fingerprints(a, b):
-        asize = len(a)
-        bsize = len(b)
-        numcounts = asize + bsize + 1
-        counts = [0] * numcounts
-
-        for i in range(asize):
-            jbegin = max(0, i - MAX_ALIGN_OFFSET)
-            jend = min(bsize, i + MAX_ALIGN_OFFSET)
-            for j in range(jbegin, jend):
-                biterror = popcount(a[i] ^ b[j]) # xor operator
-                if biterror <= MAX_BIT_ERROR:
-                    offset = i - j + bsize
-                    counts[offset] += 1
-
-        topcount = counts.max()
-        return topcount / min(asize, bsize)
-
-    return match_fingerprints(a, b)
+    return _match_fingerprints(a, b)
 
 
 def match(apikey, path, meta=DEFAULT_META, parse=True, force_fpcalc=False,

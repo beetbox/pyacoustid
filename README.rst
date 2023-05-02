@@ -25,7 +25,7 @@ use ``fpcalc``, either ensure that it is on your ``$PATH`` or set the ``FPCALC``
 environment variable to its location.
 
 __ lukas_
-.. _lukas: http://oxygene.sk/lukas/
+.. _lukas: https://oxygene.sk/about/
 .. _libavcodec: http://ffmpeg.org/
 
 Then you can install this library from `PyPI`_ using `pip`_::

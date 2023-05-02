@@ -370,10 +370,8 @@ def compare_fingerprints(a, b) -> float:
         raise ModuleNotFoundError("function needs chromaprint")
 
     # decompress fingerprints
-    a = chromaprint.decode_fingerprint(a)[0]
-    b = chromaprint.decode_fingerprint(b)[0]
-    a = list(map(int, a))
-    b = list(map(int, b))
+    a = [int(x) for x in chromaprint.decode_fingerprint(a)[0]]
+    b = [int(x) for x in chromaprint.decode_fingerprint(b)[0]]
 
     ACOUSTID_MAX_BIT_ERROR = 2
     ACOUSTID_MAX_ALIGN_OFFSET = 120

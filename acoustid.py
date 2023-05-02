@@ -352,12 +352,6 @@ def fingerprint_file(path, maxlength=MAX_AUDIO_LENGTH, force_fpcalc=False):
     else:
         return _fingerprint_file_fpcalc(path, maxlength)
 
-
-
-
-
-
-
 def compare_fingerprints(a, b) -> float:
     """
     compare two fingerprints locally
@@ -373,8 +367,8 @@ def compare_fingerprints(a, b) -> float:
     a = [int(x) for x in chromaprint.decode_fingerprint(a)[0]]
     b = [int(x) for x in chromaprint.decode_fingerprint(b)[0]]
 
-    ACOUSTID_MAX_BIT_ERROR = 2
-    ACOUSTID_MAX_ALIGN_OFFSET = 120
+    MAX_BIT_ERROR = 2
+    MAX_ALIGN_OFFSET = 120
 
     def popcount(x):
         return bin(x).count('1')
@@ -386,11 +380,11 @@ def compare_fingerprints(a, b) -> float:
         counts = [0] * numcounts
 
         for i in range(asize):
-            jbegin = max(0, i - ACOUSTID_MAX_ALIGN_OFFSET)
-            jend = min(bsize, i + ACOUSTID_MAX_ALIGN_OFFSET)
+            jbegin = max(0, i - MAX_ALIGN_OFFSET)
+            jend = min(bsize, i + MAX_ALIGN_OFFSET)
             for j in range(jbegin, jend):
                 biterror = popcount(a[i] ^ b[j]) # xor operator
-                if biterror <= ACOUSTID_MAX_BIT_ERROR:
+                if biterror <= MAX_BIT_ERROR:
                     offset = i - j + bsize
                     counts[offset] += 1
 

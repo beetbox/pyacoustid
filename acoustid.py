@@ -359,8 +359,8 @@ def _popcount(x) -> int:
     return bin(x).count('1')
 
 
-def _match_fingerprints(a: List[int], b:  List[int]) -> float:
-    """ bitwhise comparison of Chromaprint/acoustid fingerpints
+def _match_fingerprints(a: List[int], b: List[int]) -> float:
+    """ bitwise comparison of Chromaprint/acoustid fingerpints
     more info on how the fingerpints work https://essentia.upf.edu/tutorial_fingerprinting_chromaprint.html
     :param a: decompressed fingerprint
     :param b: decompressed fingerprint

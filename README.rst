@@ -108,7 +108,9 @@ Version History
 ---------------
 
 1.3.0
-  Multiple artist names are joined by join phrases as displayed on web page.
+  Multiple artists are joined by join phrases, as displayed on the web page.
+  A new (pure-Python) function compares two Chromaprint fingerprints for
+  similarity.
 
 1.2.3
   Fix the signedness of numbers returned from

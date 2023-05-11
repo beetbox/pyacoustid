@@ -85,6 +85,8 @@ parts of the process:
 - ``parse_lookup_result(data)``: Given a parsed JSON response, return an
   iterator over tuples containing the match score (a float between 0 and 1), the
   MusicBrainz recording ID, title, and artist name for each match.
+- ``compare_fingerprints(a, b)``: Compare two fingerprints produced by
+  `fingerprint_file`, returning a similarity score.
 
 The module internally performs thread-safe API rate limiting to 3 queries per
 second whenever the Web API is called, in accordance with the `Web service

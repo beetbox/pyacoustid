@@ -360,8 +360,11 @@ def _popcount(x) -> int:
 
 
 def _match_fingerprints(a: List[int], b: List[int]) -> float:
-    """ bitwise comparison of Chromaprint/acoustid fingerpints
-    more info on how the fingerpints work https://essentia.upf.edu/tutorial_fingerprinting_chromaprint.html
+    """Compare two Chromaprint fingerprints, given as numbers.
+
+    For more details, see:
+    https://essentia.upf.edu/tutorial_fingerprinting_chromaprint.html
+
     :param a: decompressed fingerprint
     :param b: decompressed fingerprint
     :return:  similarity score [0,1]
@@ -382,10 +385,12 @@ def _match_fingerprints(a: List[int], b: List[int]) -> float:
     topcount = counts.max()
     return topcount / min(asize, bsize)
 
+
 def compare_fingerprints(a, b) -> float:
-    """ compare two fingerprints locally
-    :param a: fingerprint of acoustid.fingerprint_file(filepath_a)
-    :param b: second fingerprint of acoustid.fingerprint_file(filepath_b)
+    """Compare two fingerprints produced by `fingerprint_file`.
+
+    :param a: A pair produced by `fingerprint_file`.
+    :param b: A second such pair.
     :return:  similarity score [0,1]
     """
     if not have_chromaprint:

@@ -14,19 +14,23 @@
 
 from __future__ import division
 from __future__ import absolute_import
+from typing import List
 
 import os
 import json
 import requests
 import contextlib
 import errno
+
 try:
     import audioread
+
     have_audioread = True
 except ImportError:
     have_audioread = False
 try:
     import chromaprint
+
     have_chromaprint = True
 except ImportError:
     have_chromaprint = False
@@ -36,13 +40,14 @@ import time
 import gzip
 from io import BytesIO
 
-
 API_BASE_URL = 'http://api.acoustid.org/v2/'
 DEFAULT_META = ['recordings']
 REQUEST_INTERVAL = 0.33  # 3 requests/second.
 MAX_AUDIO_LENGTH = 120  # Seconds.
 FPCALC_COMMAND = 'fpcalc'
 FPCALC_ENVVAR = 'FPCALC'
+MAX_BIT_ERROR = 2  # comparison settings
+MAX_ALIGN_OFFSET = 120
 
 
 # Exceptions.
@@ -132,6 +137,7 @@ class CompressedHTTPAdapter(requests.adapters.HTTPAdapter):
     """An `HTTPAdapter` that compresses request bodies with gzip. The
     Content-Encoding header is set accordingly.
     """
+
     def add_headers(self, request, **kwargs):
         body = request.body
         if not isinstance(body, bytes):
@@ -346,6 +352,54 @@ def fingerprint_file(path, maxlength=MAX_AUDIO_LENGTH, force_fpcalc=False):
         return _fingerprint_file_audioread(path, maxlength)
     else:
         return _fingerprint_file_fpcalc(path, maxlength)
+
+
+def _popcount(x) -> int:
+    """count 1s in binary encoding of x"""
+    return bin(x).count('1')
+
+
+def _match_fingerprints(a: List[int], b: List[int]) -> float:
+    """Compare two Chromaprint fingerprints, given as numbers.
+
+    For more details, see:
+    https://essentia.upf.edu/tutorial_fingerprinting_chromaprint.html
+
+    :param a: decompressed fingerprint
+    :param b: decompressed fingerprint
+    :return:  similarity score [0,1]
+    """
+    asize = len(a)
+    bsize = len(b)
+    numcounts = asize + bsize + 1
+    counts = [0] * numcounts
+
+    for i in range(asize):
+        jbegin = max(0, i - MAX_ALIGN_OFFSET)
+        jend = min(bsize, i + MAX_ALIGN_OFFSET)
+        for j in range(jbegin, jend):
+            biterror = _popcount(a[i] ^ b[j])  # xor operator
+            if biterror <= MAX_BIT_ERROR:
+                offset = i - j + bsize
+                counts[offset] += 1
+    topcount = counts.max()
+    return topcount / min(asize, bsize)
+
+
+def compare_fingerprints(a, b) -> float:
+    """Compare two fingerprints produced by `fingerprint_file`.
+
+    :param a: A pair produced by `fingerprint_file`.
+    :param b: A second such pair.
+    :return:  similarity score [0,1]
+    """
+    if not have_chromaprint:
+        raise ModuleNotFoundError("function needs chromaprint")
+
+    # decompress fingerprints
+    a = [int(x) for x in chromaprint.decode_fingerprint(a)[0]]
+    b = [int(x) for x in chromaprint.decode_fingerprint(b)[0]]
+    return _match_fingerprints(a, b)
 
 
 def match(apikey, path, meta=DEFAULT_META, parse=True, force_fpcalc=False,

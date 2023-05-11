@@ -85,6 +85,8 @@ parts of the process:
 - ``parse_lookup_result(data)``: Given a parsed JSON response, return an
   iterator over tuples containing the match score (a float between 0 and 1), the
   MusicBrainz recording ID, title, and artist name for each match.
+- ``compare_fingerprints(a, b)``: Compare two fingerprints produced by
+  `fingerprint_file`, returning a similarity score.
 
 The module internally performs thread-safe API rate limiting to 3 queries per
 second whenever the Web API is called, in accordance with the `Web service
@@ -106,7 +108,9 @@ Version History
 ---------------
 
 1.3.0
-  Multiple artist names are joined by join phrases as displayed on web page.
+  Multiple artists are joined by join phrases, as displayed on the web page.
+  A new (pure-Python) function compares two Chromaprint fingerprints for
+  similarity.
 
 1.2.3
   Fix the signedness of numbers returned from

@@ -382,7 +382,7 @@ def _match_fingerprints(a: List[int], b: List[int]) -> float:
             if biterror <= MAX_BIT_ERROR:
                 offset = i - j + bsize
                 counts[offset] += 1
-    topcount = counts.max()
+    topcount = max(counts)
     return topcount / min(asize, bsize)
 
 
@@ -397,8 +397,8 @@ def compare_fingerprints(a, b) -> float:
         raise ModuleNotFoundError("function needs chromaprint")
 
     # decompress fingerprints
-    a = [int(x) for x in chromaprint.decode_fingerprint(a)[0]]
-    b = [int(x) for x in chromaprint.decode_fingerprint(b)[0]]
+    a = [int(x) for x in chromaprint.decode_fingerprint(a[1])[0]]
+    b = [int(x) for x in chromaprint.decode_fingerprint(b[1])[0]]
     return _match_fingerprints(a, b)
 
 

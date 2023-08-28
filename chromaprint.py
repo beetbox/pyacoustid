@@ -25,7 +25,7 @@ def _guess_lib_name():
     if sys.platform == 'darwin':
         return ('libchromaprint.1.dylib', 'libchromaprint.0.dylib')
     elif sys.platform == 'win32':
-        return ('chromaprint.dll', 'libchromaprint.dll')
+        return ('', 'libchromaprint.dll')
     elif sys.platform == 'cygwin':
         return ('libchromaprint.dll.a', 'cygchromaprint-1.dll',
                 'cygchromaprint-0.dll')
@@ -44,7 +44,10 @@ def _load_library(name):
             return None
 
     try:
-        return ctypes.cdll.LoadLibrary(name)
+        if sys.platform == 'win32':
+            return ctypes.WinDLL(name, winmode=0)
+        else:
+            return ctypes.cdll.LoadLibrary(name)
     except OSError:
         return None
 

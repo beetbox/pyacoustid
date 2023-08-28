@@ -397,8 +397,8 @@ def compare_fingerprints(a, b) -> float:
         raise ModuleNotFoundError("function needs chromaprint")
 
     # decompress fingerprints
-    a = [int(x) for x in chromaprint.decode_fingerprint(a)[0]]
-    b = [int(x) for x in chromaprint.decode_fingerprint(b)[0]]
+    a = [int(x) for x in chromaprint.decode_fingerprint(a[1])[0]]
+    b = [int(x) for x in chromaprint.decode_fingerprint(b[1])[0]]
     return _match_fingerprints(a, b)
 
 

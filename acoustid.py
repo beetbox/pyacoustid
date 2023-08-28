@@ -382,7 +382,7 @@ def _match_fingerprints(a: List[int], b: List[int]) -> float:
             if biterror <= MAX_BIT_ERROR:
                 offset = i - j + bsize
                 counts[offset] += 1
-    topcount = counts.max()
+    topcount = max(counts)
     return topcount / min(asize, bsize)
 
 

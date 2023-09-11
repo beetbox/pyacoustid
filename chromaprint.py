@@ -36,6 +36,8 @@ def _load_library(name):
     """Try to load a dynamic library with ctypes, or return None if the
     library is not available.
     """
+    _LOAD_WITH_ALTERED_SEARCH_PATH = 8   # https://learn.microsoft.com/en-us/windows/win32/api/libloaderapi/nf-libloaderapi-loadlibraryexa
+
     if sys.platform == 'win32':
         # On Windows since Python 3.8, we need an extra call to
         # `find_library` to search standard library paths.
@@ -44,10 +46,7 @@ def _load_library(name):
             return None
 
     try:
-        if sys.platform == 'win32':
-            return ctypes.WinDLL(name, winmode=0)
-        else:
-            return ctypes.cdll.LoadLibrary(name)
+        return ctypes.CDLL(name, winmode=_LOAD_WITH_ALTERED_SEARCH_PATH)
     except OSError:
         return None
 

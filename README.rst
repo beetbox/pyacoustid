@@ -111,6 +111,7 @@ Version History
   Multiple artists are joined by join phrases, as displayed on the web page.
   A new (pure-Python) function compares two Chromaprint fingerprints for
   similarity.
+  Search more shared-library locations for the Chromaprint library on Windows.
 
 1.2.3
   Fix the signedness of numbers returned from

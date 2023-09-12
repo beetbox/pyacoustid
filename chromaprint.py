@@ -44,7 +44,9 @@ def _load_library(name):
             return None
 
     try:
-        return ctypes.cdll.LoadLibrary(name)
+        # Use `winmode=0` to search for libraries in extended search paths.
+        # https://learn.microsoft.com/en-us/windows/win32/api/libloaderapi/nf-libloaderapi-loadlibraryexa
+        return ctypes.CDLL(name, winmode=0)
     except OSError:
         return None
 

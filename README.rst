@@ -59,7 +59,9 @@ Using in Your Code
 ------------------
 
 The simplest way to use pyacoustid to identify audio files is to call the
-``match`` function::
+``match`` function:
+
+.. code-block:: python
 
     >>> import acoustid
     >>> for score, recording_id, title, artist in acoustid.match(apikey, path):

@@ -21,6 +21,9 @@ import json
 import requests
 import contextlib
 import errno
+import sys
+if sys.byteorder == 'big':
+    import struct
 
 try:
     import audioread
@@ -206,6 +209,17 @@ def _api_request(url, params, timeout=None):
     except ValueError:
         raise WebServiceError('response is not valid JSON')
 
+def byteswap(s):
+    """Swaps the endianness of the bytestring s, which must be an array
+    of shorts (16-bit signed integers).
+    """
+    assert len(s) % 2 == 0
+    parts = []
+    for i in range(0, len(s), 2):
+        chunk = s[i:i + 2]
+        newchunk = struct.pack('>h', *struct.unpack('<h', chunk))
+        parts.append(newchunk)
+    return b''.join(parts)
 
 # Main API.
 
@@ -224,7 +238,11 @@ def fingerprint(samplerate, channels, pcmiter, maxlength=MAX_AUDIO_LENGTH):
 
         position = 0  # Samples of audio fed to the fingerprinter.
         for block in pcmiter:
-            fper.feed(block)
+            if sys.byteorder == 'big':
+                """audioread reads in s16le format"""
+                fper.feed(byteswap(block))
+            else:
+                fper.feed(block)
             position += len(block) // 2  # 2 bytes/sample.
             if position >= endposition:
                 break

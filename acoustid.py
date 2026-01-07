@@ -221,12 +221,20 @@ def fingerprint(samplerate, channels, pcmiter, maxlength=MAX_AUDIO_LENGTH):
         fper = chromaprint.Fingerprinter()
         fper.start(samplerate, channels)
 
-        position = 0  # Samples of audio fed to the fingerprinter.
-        for block in pcmiter:
-            fper.feed(block)
-            position += len(block) // 2  # 2 bytes/sample.
-            if position >= endposition:
+        position = 0
+        while position < endposition:
+            try:
+                block = next(pcmiter)
+            except StopIteration:
+                # No more data
                 break
+
+            # Calculate remaining samples needed
+            remaining = endposition - position
+            # Feed only up to remaining samples
+            bytes_to_feed = min(len(block), remaining * 2)
+            fper.feed(block[:bytes_to_feed])
+            position += bytes_to_feed // 2
 
         return fper.finish()
     except chromaprint.FingerprintError:

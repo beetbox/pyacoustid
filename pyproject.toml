@@ -1,0 +1,37 @@
+[project]
+name = "pyacoustid"
+version = "1.2.2"
+description = "Bindings for Chromaprint acoustic fingerprinting and the Acoustid API"
+authors = [{ name = "Adrian Sampson", email = "adrian@radbox.org" }]
+readme = "README.rst"
+license = "MIT"
+requires-python = ">=2.7"
+classifiers = [
+    "Intended Audience :: Developers",
+    "License :: OSI Approved :: MIT License",
+    "Programming Language :: Python :: 2",
+    "Topic :: Multimedia :: Sound/Audio :: Conversion",
+]
+dependencies = [
+    "audioread",
+    "requests",
+]
+
+[project.urls]
+Homepage = "https://github.com/beetbox/pyacoustid"
+Repository = "https://github.com/beetbox/pyacoustid"
+"Bug Tracker" = "https://github.com/beetbox/pyacoustid/issues"
+
+[build-system]
+requires = ["poetry-core>=1.0.0"]
+build-backend = "poetry.core.masonry.api"
+
+[tool.poetry]
+packages = [
+    { include = "acoustid.py" },
+    { include = "chromaprint.py" },
+]
+include = [
+    { path = "aidmatch.py", format = "sdist" },
+    { path = "fpcalc.py", format = "sdist" },
+]

@@ -31,6 +31,10 @@ Repository = "https://github.com/beetbox/pyacoustid"
 requires = ["poetry-core>=1.0.0"]
 build-backend = "poetry.core.masonry.api"
 
+[tool.pipx-install]
+poethepoet = ">=0.26"
+poetry = ">=2.1"
+
 [tool.poetry]
 packages = [
     { include = "acoustid.py" },

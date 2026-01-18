@@ -15,13 +15,15 @@
 """Example script that identifies metadata for files specified on the
 command line.
 """
-import acoustid
+
 import sys
+
+import acoustid
 
 # API key for this demo script only. Get your own API key at the
 # Acoustid Web for your application.
 # http://acoustid.org/
-API_KEY = 'cSpUJKpD'
+API_KEY = "cSpUJKpD"
 
 
 def aidmatch(filename):
@@ -43,10 +45,10 @@ def aidmatch(filename):
             first = False
         else:
             print()
-        print('%s - %s' % (artist, title))
-        print('http://musicbrainz.org/recording/%s' % rid)
-        print('Score: %i%%' % (int(score * 100)))
+        print("%s - %s" % (artist, title))
+        print("http://musicbrainz.org/recording/%s" % rid)
+        print("Score: %i%%" % (int(score * 100)))
 
 
-if __name__ == '__main__':
+if __name__ == "__main__":
     aidmatch(sys.argv[1])

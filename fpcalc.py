@@ -26,13 +26,19 @@ import chromaprint
 
 def main():
     parser = argparse.ArgumentParser()
-    parser.add_argument('-length', metavar='SECS', type=int, default=120,
-                        help='length of the audio data used for fingerprint '
-                             'calculation (default 120)')
-    parser.add_argument('-raw', action='store_true',
-                        help='output the raw uncompressed fingerprint')
-    parser.add_argument('paths', metavar='FILE', nargs='+',
-                        help='audio file to be fingerprinted')
+    parser.add_argument(
+        "-length",
+        metavar="SECS",
+        type=int,
+        default=120,
+        help="length of the audio data used for fingerprint calculation (default 120)",
+    )
+    parser.add_argument(
+        "-raw", action="store_true", help="output the raw uncompressed fingerprint"
+    )
+    parser.add_argument(
+        "paths", metavar="FILE", nargs="+", help="audio file to be fingerprinted"
+    )
 
     args = parser.parse_args()
     # make gst not try to parse the args
@@ -43,23 +49,25 @@ def main():
         try:
             duration, fp = acoustid.fingerprint_file(path, args.length)
         except Exception:
-            print("ERROR: unable to calculate fingerprint "
-                  "for file %s, skipping" % path, file=sys.stderr)
+            print(
+                "ERROR: unable to calculate fingerprint for file %s, skipping" % path,
+                file=sys.stderr,
+            )
             continue
         if args.raw:
             raw_fp = chromaprint.decode_fingerprint(fp)[0]
-            fp = ','.join(map(str, raw_fp))
+            fp = ",".join(map(str, raw_fp))
         if not first:
             print()
         first = False
-        print('FILE=%s' % path)
-        print('DURATION=%d' % duration)
+        print("FILE=%s" % path)
+        print("DURATION=%d" % duration)
         if isinstance(fp, bytes):
-            fp_text = fp.decode('utf8')
+            fp_text = fp.decode("utf8")
         else:
             fp_text = fp
-        print('FINGERPRINT=%s' % fp_text)
+        print("FINGERPRINT=%s" % fp_text)
 
 
-if __name__ == '__main__':
+if __name__ == "__main__":
     main()

@@ -50,7 +50,7 @@ def main():
             duration, fp = acoustid.fingerprint_file(path, args.length)
         except Exception:
             print(
-                "ERROR: unable to calculate fingerprint for file %s, skipping" % path,
+                f"ERROR: unable to calculate fingerprint for file {path}, skipping",
                 file=sys.stderr,
             )
             continue
@@ -60,13 +60,13 @@ def main():
         if not first:
             print()
         first = False
-        print("FILE=%s" % path)
-        print("DURATION=%d" % duration)
+        print(f"FILE={path}")
+        print(f"DURATION={duration}")
         if isinstance(fp, bytes):
             fp_text = fp.decode("utf8")
         else:
             fp_text = fp
-        print("FINGERPRINT=%s" % fp_text)
+        print(f"FINGERPRINT={fp_text}")
 
 
 if __name__ == "__main__":

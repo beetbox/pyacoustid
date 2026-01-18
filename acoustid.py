@@ -93,7 +93,7 @@ class WebServiceError(AcoustidError):
                     if "code" in error:
                         self.code = error["code"]
 
-        super(WebServiceError, self).__init__(message)
+        super().__init__(message)
         self.message = message
 
 
@@ -150,7 +150,7 @@ class CompressedHTTPAdapter(requests.adapters.HTTPAdapter):
 # Utilities.
 
 
-class _rate_limit(object):  # noqa: N801
+class _rate_limit:  # noqa: N801
     """A decorator that limits the rate at which the function may be
     called.  The rate is controlled by the REQUEST_INTERVAL module-level
     constant; set the value to zero to disable rate limiting. The
@@ -195,9 +195,9 @@ def _api_request(url, params, timeout=None):
                 params["meta"] = " ".join(params["meta"])
             response = session.post(url, data=params, headers=headers, timeout=timeout)
         except requests.exceptions.RequestException as exc:
-            raise WebServiceError("HTTP request failed: {0}".format(exc))
+            raise WebServiceError(f"HTTP request failed: {exc}")
         except requests.exceptions.ReadTimeout:
-            raise WebServiceError("HTTP request timed out ({0}s)".format(timeout))
+            raise WebServiceError(f"HTTP request timed out ({timeout}s)")
 
     try:
         return response.json()
@@ -259,7 +259,7 @@ def parse_lookup_result(data):
     WebServiceError.
     """
     if data["status"] != "ok":
-        raise WebServiceError("status: %s" % data["status"])
+        raise WebServiceError("status: {}".format(data["status"]))
     if "results" not in data:
         raise WebServiceError("results not included")
 
@@ -308,10 +308,10 @@ def _fingerprint_file_fpcalc(path, maxlength):
         if exc.errno == errno.ENOENT:
             raise NoBackendError("fpcalc not found")
         else:
-            raise FingerprintGenerationError("fpcalc invocation failed: %s" % str(exc))
+            raise FingerprintGenerationError(f"fpcalc invocation failed: {exc!s}")
     retcode = proc.poll()
     if retcode:
-        raise FingerprintGenerationError("fpcalc exited with status %i" % retcode)
+        raise FingerprintGenerationError(f"fpcalc exited with status {retcode}")
 
     duration = fp = None
     for line in output.splitlines():
@@ -450,7 +450,7 @@ def submit(apikey, userkey, data, timeout=None):
         d["duration"] = int(d["duration"])
 
         for k, v in d.items():
-            args["%s.%s" % (k, i)] = v
+            args[f"{k}.{i}"] = v
 
     response = _api_request(_get_submit_url(), args, timeout)
     if response.get("status") != "ok":
@@ -458,8 +458,8 @@ def submit(apikey, userkey, data, timeout=None):
             code = response["error"]["code"]
             message = response["error"]["message"]
         except KeyError:
-            raise WebServiceError("response: {0}".format(response))
-        raise WebServiceError("error {0}: {1}".format(code, message))
+            raise WebServiceError(f"response: {response}")
+        raise WebServiceError(f"error {code}: {message}")
     return response
 
 

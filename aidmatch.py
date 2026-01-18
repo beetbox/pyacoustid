@@ -45,9 +45,9 @@ def aidmatch(filename):
             first = False
         else:
             print()
-        print("%s - %s" % (artist, title))
-        print("http://musicbrainz.org/recording/%s" % rid)
-        print("Score: %i%%" % (int(score * 100)))
+        print(f"{artist} - {title}")
+        print(f"http://musicbrainz.org/recording/{rid}")
+        print(f"Score: {int(score * 100)}%")
 
 
 if __name__ == "__main__":

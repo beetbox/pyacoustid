@@ -129,7 +129,7 @@ def _check(res):
         raise FingerprintError()
 
 
-class Fingerprinter(object):
+class Fingerprinter:
     ALGORITHM_TEST1 = 0
     ALGORITHM_TEST2 = 1
     ALGORITHM_TEST3 = 2

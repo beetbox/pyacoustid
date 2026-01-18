@@ -12,10 +12,6 @@
 # The above copyright notice and this permission notice shall be
 # included in all copies or substantial portions of the Software.
 
-from __future__ import division
-from __future__ import absolute_import
-from typing import List
-
 import os
 import json
 import requests
@@ -312,11 +308,6 @@ def _fingerprint_file_fpcalc(path, maxlength):
         else:
             raise FingerprintGenerationError("fpcalc invocation failed: %s" %
                                              str(exc))
-    except UnicodeEncodeError:
-        # Due to a bug in Python 2's subprocess on Windows, Unicode
-        # filenames can fail to encode on that platform. See:
-        # http://bugs.python.org/issue1759845
-        raise FingerprintGenerationError("argument encoding failed")
     retcode = proc.poll()
     if retcode:
         raise FingerprintGenerationError("fpcalc exited with status %i" %
@@ -359,7 +350,7 @@ def _popcount(x) -> int:
     return bin(x).count('1')
 
 
-def _match_fingerprints(a: List[int], b: List[int]) -> float:
+def _match_fingerprints(a: list[int], b: list[int]) -> float:
     """Compare two Chromaprint fingerprints, given as numbers.
 
     For more details, see:

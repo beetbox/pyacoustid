@@ -5,11 +5,16 @@ description = "Bindings for Chromaprint acoustic fingerprinting and the Acoustid
 authors = [{ name = "Adrian Sampson", email = "adrian@radbox.org" }]
 readme = "README.rst"
 license = "MIT"
-requires-python = ">=2.7"
+requires-python = ">=3.10"
 classifiers = [
     "Intended Audience :: Developers",
     "License :: OSI Approved :: MIT License",
-    "Programming Language :: Python :: 2",
+    "Programming Language :: Python :: 3",
+    "Programming Language :: Python :: 3.10",
+    "Programming Language :: Python :: 3.11",
+    "Programming Language :: Python :: 3.12",
+    "Programming Language :: Python :: 3.13",
+    "Programming Language :: Python :: 3.14",
     "Topic :: Multimedia :: Sound/Audio :: Conversion",
 ]
 dependencies = [

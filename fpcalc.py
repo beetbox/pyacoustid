@@ -1,4 +1,4 @@
-#!/usr/bin/env python
+#!/usr/bin/env python3
 
 # This file is part of pyacoustid.
 # Copyright 2012, Lukas Lalinsky.
@@ -16,10 +16,6 @@
 
 """Simple script for calculating audio fingerprints, using the same
 arguments/output as the fpcalc utility from Chromaprint."""
-
-from __future__ import division
-from __future__ import absolute_import
-from __future__ import print_function
 
 import argparse
 import sys
@@ -54,11 +50,15 @@ def main():
             raw_fp = chromaprint.decode_fingerprint(fp)[0]
             fp = ','.join(map(str, raw_fp))
         if not first:
-            print
+            print()
         first = False
         print('FILE=%s' % path)
         print('DURATION=%d' % duration)
-        print('FINGERPRINT=%s' % fp.decode('utf8'))
+        if isinstance(fp, bytes):
+            fp_text = fp.decode('utf8')
+        else:
+            fp_text = fp
+        print('FINGERPRINT=%s' % fp_text)
 
 
 if __name__ == '__main__':

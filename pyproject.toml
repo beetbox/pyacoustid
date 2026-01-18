@@ -22,6 +22,13 @@ dependencies = [
     "requests",
 ]
 
+[dependency-groups]
+lint = [
+    "mypy >= 1.18.2",
+    "ruff >= 0.6.4",
+    "types-requests",
+]
+
 [project.urls]
 Homepage = "https://github.com/beetbox/pyacoustid"
 Repository = "https://github.com/beetbox/pyacoustid"
@@ -44,3 +51,49 @@ include = [
     { path = "aidmatch.py", format = "sdist" },
     { path = "fpcalc.py", format = "sdist" },
 ]
+
+[tool.poe.tasks.check-format]
+help = "Check the code for style issues"
+cmd = "ruff format --config=pyproject.toml --check --diff"
+
+[tool.poe.tasks.check-types]
+help = "Check the code for typing issues. Accepts mypy options."
+cmd = "mypy"
+
+[tool.poe.tasks.format]
+help = "Format the codebase"
+cmd = "ruff format --config=pyproject.toml"
+
+[tool.poe.tasks.lint]
+help = "Check the code for linting issues. Accepts ruff options."
+cmd = "ruff check --config=pyproject.toml"
+
+[tool.ruff]
+target-version = "py310"
+
+[tool.ruff.lint]
+future-annotations = true
+select = [
+    "E", # pycodestyle
+    "F", # pyflakes
+    "G", # flake8-logging-format
+    "I", # isort
+    "ISC", # flake8-implicit-str-concat
+    "N", # pep8-naming
+    "PT", # flake8-pytest-style
+    "RUF", # ruff
+    "UP", # pyupgrade
+    "TC", # flake8-type-checking
+    "W", # pycodestyle
+]
+ignore = [
+    "TC006", # no need to quote 'cast's since we use 'from __future__ import annotations'
+]
+
+[tool.ruff.lint.isort]
+split-on-trailing-comma = false
+
+[tool.ruff.lint.flake8-pytest-style]
+fixture-parentheses = false
+mark-parentheses = false
+parametrize-names-type = "csv"

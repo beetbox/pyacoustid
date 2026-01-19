@@ -23,6 +23,10 @@ dependencies = [
 ]
 
 [dependency-groups]
+dev = [
+    "pytest >= 8.4.2",
+    "pytest-cov >= 7.0.0",
+]
 lint = [
     "mypy >= 1.18.2",
     "ruff >= 0.6.4",
@@ -68,6 +72,27 @@ cmd = "ruff format --config=pyproject.toml"
 help = "Check the code for linting issues. Accepts ruff options."
 cmd = "ruff check --config=pyproject.toml"
 
+[tool.poe.tasks.test]
+help = "Run tests with pytest"
+cmd = "pytest $OPTS"
+env.OPTS.default = "-p no:cov"
+
+[tool.poe.tasks.test-with-coverage]
+help = "Run tests and record coverage"
+ref = "test"
+# record coverage for the main packages
+# save xml for coverage upload to codecov
+# save html report for local dev use
+# measure coverage across logical branches
+# show which tests cover specific lines in the code (see the HTML report)
+env.OPTS = """
+--cov=chromaprint
+--cov=acoustid
+--cov-report=xml:.reports/coverage.xml
+--cov-report=html:.reports/html
+--cov-branch
+--cov-context=test
+"""
 [tool.ruff]
 target-version = "py310"
 

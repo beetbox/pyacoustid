@@ -12,15 +12,12 @@
 # The above copyright notice and this permission notice shall be
 # included in all copies or substantial portions of the Software.
 
-from __future__ import division
-from __future__ import absolute_import
-from typing import List
-
-import os
-import json
-import requests
 import contextlib
 import errno
+import json
+import os
+
+import requests
 
 try:
     import audioread
@@ -34,23 +31,24 @@ try:
     have_chromaprint = True
 except ImportError:
     have_chromaprint = False
+import gzip
 import subprocess
 import threading
 import time
-import gzip
 from io import BytesIO
 
-API_BASE_URL = 'http://api.acoustid.org/v2/'
-DEFAULT_META = ['recordings']
+API_BASE_URL = "http://api.acoustid.org/v2/"
+DEFAULT_META = ["recordings"]
 REQUEST_INTERVAL = 0.33  # 3 requests/second.
 MAX_AUDIO_LENGTH = 120  # Seconds.
-FPCALC_COMMAND = 'fpcalc'
-FPCALC_ENVVAR = 'FPCALC'
+FPCALC_COMMAND = "fpcalc"
+FPCALC_ENVVAR = "FPCALC"
 MAX_BIT_ERROR = 2  # comparison settings
 MAX_ALIGN_OFFSET = 120
 
 
 # Exceptions.
+
 
 class AcoustidError(Exception):
     """Base for exceptions in this module."""
@@ -76,6 +74,7 @@ class WebServiceError(AcoustidError):
     sent by the acoustid server, then the ``code`` field contains the
     acoustid error code.
     """
+
     def __init__(self, message, response=None):
         """Create an error for the given HTTP response body, if
         provided, with the ``message`` as a fallback.
@@ -87,48 +86,50 @@ class WebServiceError(AcoustidError):
             except ValueError:
                 pass
             else:
-                if isinstance(data.get('error'), dict):
-                    error = data['error']
-                    if 'message' in error:
-                        message = error['message']
-                    if 'code' in error:
-                        self.code = error['code']
+                if isinstance(data.get("error"), dict):
+                    error = data["error"]
+                    if "message" in error:
+                        message = error["message"]
+                    if "code" in error:
+                        self.code = error["code"]
 
-        super(WebServiceError, self).__init__(message)
+        super().__init__(message)
         self.message = message
 
 
 # Endpoint configuration.
 
+
 def set_base_url(url):
     """Set the URL of the API server to query."""
-    if not url.endswith('/'):
-        url += '/'
+    if not url.endswith("/"):
+        url += "/"
     global API_BASE_URL
     API_BASE_URL = url
 
 
 def _get_lookup_url():
     """Get the URL of the lookup API endpoint."""
-    return API_BASE_URL + 'lookup'
+    return API_BASE_URL + "lookup"
 
 
 def _get_submit_url():
     """Get the URL of the submission API endpoint."""
-    return API_BASE_URL + 'submit'
+    return API_BASE_URL + "submit"
 
 
 def _get_submission_status_url():
     """Get the URL of the submission status API endpoint."""
-    return API_BASE_URL + 'submission_status'
+    return API_BASE_URL + "submission_status"
 
 
 # Compressed HTTP request bodies.
 
+
 def _compress(data):
     """Compress a bytestring to a gzip archive."""
     sio = BytesIO()
-    with contextlib.closing(gzip.GzipFile(fileobj=sio, mode='wb')) as f:
+    with contextlib.closing(gzip.GzipFile(fileobj=sio, mode="wb")) as f:
         f.write(data)
     return sio.getvalue()
 
@@ -141,20 +142,22 @@ class CompressedHTTPAdapter(requests.adapters.HTTPAdapter):
     def add_headers(self, request, **kwargs):
         body = request.body
         if not isinstance(body, bytes):
-            body = body.encode('utf8')
+            body = body.encode("utf8")
         request.prepare_body(_compress(body), None)
-        request.headers['Content-Encoding'] = 'gzip'
+        request.headers["Content-Encoding"] = "gzip"
 
 
 # Utilities.
 
-class _rate_limit(object):  # noqa: N801
+
+class _rate_limit:  # noqa: N801
     """A decorator that limits the rate at which the function may be
     called.  The rate is controlled by the REQUEST_INTERVAL module-level
     constant; set the value to zero to disable rate limiting. The
     limiting is thread-safe; only one thread may be in the function at a
     time (acts like a monitor in this sense).
     """
+
     def __init__(self, fun):
         self.fun = fun
         self.last_call = 0.0
@@ -181,33 +184,29 @@ def _api_request(url, params, timeout=None):
     If the specified timeout passes, then raises a TimeoutError.
     """
     headers = {
-        'Accept-Encoding': 'gzip',
-        "Content-Type": "application/x-www-form-urlencoded"
+        "Accept-Encoding": "gzip",
+        "Content-Type": "application/x-www-form-urlencoded",
     }
 
     with requests.Session() as session:
-        session.mount('http://', CompressedHTTPAdapter())
+        session.mount("http://", CompressedHTTPAdapter())
         try:
-            if isinstance(params.get('meta'), list):
-                params['meta'] = ' '.join(params['meta'])
-            response = session.post(url,
-                                    data=params,
-                                    headers=headers,
-                                    timeout=timeout)
+            if isinstance(params.get("meta"), list):
+                params["meta"] = " ".join(params["meta"])
+            response = session.post(url, data=params, headers=headers, timeout=timeout)
         except requests.exceptions.RequestException as exc:
-            raise WebServiceError("HTTP request failed: {0}".format(exc))
+            raise WebServiceError(f"HTTP request failed: {exc}")
         except requests.exceptions.ReadTimeout:
-            raise WebServiceError(
-                "HTTP request timed out ({0}s)".format(timeout)
-            )
+            raise WebServiceError(f"HTTP request timed out ({timeout}s)")
 
     try:
         return response.json()
     except ValueError:
-        raise WebServiceError('response is not valid JSON')
+        raise WebServiceError("response is not valid JSON")
 
 
 # Main API.
+
 
 def fingerprint(samplerate, channels, pcmiter, maxlength=MAX_AUDIO_LENGTH):
     """Fingerprint audio data given its sample rate and number of
@@ -242,11 +241,11 @@ def lookup(apikey, fingerprint, duration, meta=DEFAULT_META, timeout=None):
     tracks, compress, usermeta, sources.
     """
     params = {
-        'format': 'json',
-        'client': apikey,
-        'duration': int(duration),
-        'fingerprint': fingerprint,
-        'meta': meta,
+        "format": "json",
+        "client": apikey,
+        "duration": int(duration),
+        "fingerprint": fingerprint,
+        "meta": meta,
     }
     return _api_request(_get_lookup_url(), params, timeout)
 
@@ -259,18 +258,18 @@ def parse_lookup_result(data):
     the last item is None. If the response is incomplete, raises a
     WebServiceError.
     """
-    if data['status'] != 'ok':
-        raise WebServiceError("status: %s" % data['status'])
-    if 'results' not in data:
+    if data["status"] != "ok":
+        raise WebServiceError("status: {}".format(data["status"]))
+    if "results" not in data:
         raise WebServiceError("results not included")
 
-    for result in data['results']:
-        score = result['score']
-        if 'recordings' not in result:
+    for result in data["results"]:
+        score = result["score"]
+        if "recordings" not in result:
             # No recording attached. This result is not very useful.
             continue
 
-        for recording in result['recordings']:
+        for recording in result["recordings"]:
             # Get the artist if available.
             artists = recording.get("artists")
             if artists:
@@ -283,7 +282,7 @@ def parse_lookup_result(data):
             else:
                 artist_name = None
 
-            yield score, recording['id'], recording.get('title'), artist_name
+            yield score, recording["id"], recording.get("title"), artist_name
 
 
 def _fingerprint_file_audioread(path, maxlength):
@@ -302,38 +301,30 @@ def _fingerprint_file_fpcalc(path, maxlength):
     fpcalc = os.environ.get(FPCALC_ENVVAR, FPCALC_COMMAND)
     command = [fpcalc, "-length", str(maxlength), path]
     try:
-        with open(os.devnull, 'wb') as devnull:
-            proc = subprocess.Popen(command, stdout=subprocess.PIPE,
-                                    stderr=devnull)
+        with open(os.devnull, "wb") as devnull:
+            proc = subprocess.Popen(command, stdout=subprocess.PIPE, stderr=devnull)
             output, _ = proc.communicate()
     except OSError as exc:
         if exc.errno == errno.ENOENT:
             raise NoBackendError("fpcalc not found")
         else:
-            raise FingerprintGenerationError("fpcalc invocation failed: %s" %
-                                             str(exc))
-    except UnicodeEncodeError:
-        # Due to a bug in Python 2's subprocess on Windows, Unicode
-        # filenames can fail to encode on that platform. See:
-        # http://bugs.python.org/issue1759845
-        raise FingerprintGenerationError("argument encoding failed")
+            raise FingerprintGenerationError(f"fpcalc invocation failed: {exc!s}")
     retcode = proc.poll()
     if retcode:
-        raise FingerprintGenerationError("fpcalc exited with status %i" %
-                                         retcode)
+        raise FingerprintGenerationError(f"fpcalc exited with status {retcode}")
 
     duration = fp = None
     for line in output.splitlines():
         try:
-            parts = line.split(b'=', 1)
+            parts = line.split(b"=", 1)
         except ValueError:
             raise FingerprintGenerationError("malformed fpcalc output")
-        if parts[0] == b'DURATION':
+        if parts[0] == b"DURATION":
             try:
                 duration = float(parts[1])
             except ValueError:
                 raise FingerprintGenerationError("fpcalc duration not numeric")
-        elif parts[0] == b'FINGERPRINT':
+        elif parts[0] == b"FINGERPRINT":
             fp = parts[1]
 
     if duration is None or fp is None:
@@ -356,10 +347,10 @@ def fingerprint_file(path, maxlength=MAX_AUDIO_LENGTH, force_fpcalc=False):
 
 def _popcount(x) -> int:
     """count 1s in binary encoding of x"""
-    return bin(x).count('1')
+    return bin(x).count("1")
 
 
-def _match_fingerprints(a: List[int], b: List[int]) -> float:
+def _match_fingerprints(a: list[int], b: list[int]) -> float:
     """Compare two Chromaprint fingerprints, given as numbers.
 
     For more details, see:
@@ -402,8 +393,9 @@ def compare_fingerprints(a, b) -> float:
     return _match_fingerprints(a, b)
 
 
-def match(apikey, path, meta=DEFAULT_META, parse=True, force_fpcalc=False,
-          timeout=None):
+def match(
+    apikey, path, meta=DEFAULT_META, parse=True, force_fpcalc=False, timeout=None
+):
     """Look up the metadata for an audio file. If ``parse`` is true,
     then ``parse_lookup_result`` is used to return an iterator over
     small tuple of relevant information; otherwise, the full parsed JSON
@@ -443,9 +435,9 @@ def submit(apikey, userkey, data, timeout=None):
         data = [data]
 
     args = {
-        'format': 'json',
-        'client': apikey,
-        'user': userkey,
+        "format": "json",
+        "client": apikey,
+        "user": userkey,
     }
 
     # Build up "field.#" parameters corresponding to the parameters
@@ -458,16 +450,16 @@ def submit(apikey, userkey, data, timeout=None):
         d["duration"] = int(d["duration"])
 
         for k, v in d.items():
-            args["%s.%s" % (k, i)] = v
+            args[f"{k}.{i}"] = v
 
     response = _api_request(_get_submit_url(), args, timeout)
-    if response.get('status') != 'ok':
+    if response.get("status") != "ok":
         try:
-            code = response['error']['code']
-            message = response['error']['message']
+            code = response["error"]["code"]
+            message = response["error"]["message"]
         except KeyError:
-            raise WebServiceError("response: {0}".format(response))
-        raise WebServiceError("error {0}: {1}".format(code, message))
+            raise WebServiceError(f"response: {response}")
+        raise WebServiceError(f"error {code}: {message}")
     return response
 
 
@@ -477,8 +469,8 @@ def get_submission_status(apikey, submission_id, timeout=None):
     in the response object of a call to the ``submit`` endpoint.
     """
     params = {
-        'format': 'json',
-        'client': apikey,
-        'id': submission_id,
+        "format": "json",
+        "client": apikey,
+        "id": submission_id,
     }
     return _api_request(_get_submission_status_url(), params, timeout)

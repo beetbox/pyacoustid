@@ -13,8 +13,7 @@ in C but portable, and the Web service, which provides fingerprint lookups.
 Installation
 ------------
 
-This library works with Python 2 (2.7+, possibly also 2.6) and Python 3
-(3.3+).
+This library works with Python 3.10+.
 
 First, install the `Chromaprint`_ fingerprinting library by `Lukáš Lalinský`__.
 (The library itself depends on an FFT library, but it's smart enough to use an

@@ -257,6 +257,46 @@ class TestFingerprinting:
         with pytest.raises(acoustid.FingerprintGenerationError):
             acoustid.fingerprint(44100, 2, [b"\x00\x00"])
 
+    @pytest.mark.parametrize(
+        "block_sizes",
+        [
+            (2, 4),
+        ],
+    )
+    def test_fingerprint_inconsistent_block_sizes(
+        self, monkeypatch, block_sizes: list[int]
+    ):
+        """Different block sizes may produce inconsistent results."""
+        from unittest.mock import Mock
+
+        def chunk_by_size(lst, size):
+            for i in range(0, len(lst), size):
+                yield lst[i : i + size]
+
+        data = bytes(range(100))  # b'\x00\x01\x02...\x63'
+
+        monkeypatch.setattr("chromaprint.Fingerprinter.start", Mock())
+        monkeypatch.setattr("chromaprint.Fingerprinter.finish", Mock())
+
+        values = []
+        for b in block_sizes:
+            mock = Mock()
+            monkeypatch.setattr("chromaprint.Fingerprinter.feed", mock)
+
+            acoustid.fingerprint(
+                1,
+                1,
+                chunk_by_size(data, b),
+                5,
+                # Half the block is consumed -> 5*2 = 10
+            )
+
+            flattened_bytes = b"".join(c.args[0] for c in mock.call_args_list)
+            values.append(flattened_bytes)
+        # Different block lengths should always feed the same number
+        # of bytes
+        assert len(set(values)) == 1
+
 
 class TestSubmissions:
     @pytest.fixture(autouse=True)

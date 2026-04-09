@@ -28,6 +28,7 @@ jobs:
 
       - name: Install system dependencies
         run: |
+          sudo apt-get update
           sudo apt install --yes --no-install-recommends \
           gstreamer1.0-plugins-good \
           gstreamer1.0-plugins-bad \

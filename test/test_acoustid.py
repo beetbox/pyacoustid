@@ -288,13 +288,14 @@ class TestFingerprinting:
                 1,
                 chunk_by_size(data, b),
                 5,
-                # Half the block is consumed -> 5*2 = 10
+                # Twice the maxlength is consumed/feed -> 5*2 = 10
             )
 
             flattened_bytes = b"".join(c.args[0] for c in mock.call_args_list)
             values.append(flattened_bytes)
-        # Different block lengths should always feed the same number
-        # of bytes
+
+        # Regardless of the block chunking
+        # we always feed the same bytes!
         assert len(set(values)) == 1
 
 

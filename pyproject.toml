@@ -1,6 +1,6 @@
 [project]
 name = "pyacoustid"
-version = "1.2.2"
+version = "1.3.1"
 description = "Bindings for Chromaprint acoustic fingerprinting and the Acoustid API"
 authors = [{ name = "Adrian Sampson", email = "adrian@radbox.org" }]
 readme = "README.rst"

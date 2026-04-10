@@ -102,7 +102,20 @@ if you want to proceed when audio can't be decoded or no match is found on the
 server. ``NoBackendError``, a subclass of ``FingerprintGenerationError``, is
 used when the Chromaprint library or fpcalc command-line tool cannot be found.
 
+You can also use the library to submit your own fingerprints, which also requires a `user api key`_.
+
+.. code-block:: python
+
+    >> acoustid.submit(apikey, userkey, {
+      'fingerprint': 'xxx',
+      'duration': 111,
+      'mbid': 'xxx-xxx',
+      'track': 'Track name',
+    })
+
+
 .. _Web service documentation: http://acoustid.org/webservice
+.. _user api key: https://acoustid.org/api-key
 
 
 Version History

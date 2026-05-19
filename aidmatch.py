@@ -16,14 +16,17 @@
 command line.
 """
 
+import os
 import sys
 
 import acoustid
 
-# API key for this demo script only. Get your own API key at the
-# Acoustid Web for your application.
-# http://acoustid.org/
-API_KEY = "cSpUJKpD"
+API_KEY = os.getenv("AID_API_KEY") or input(
+    "Please enter an api key below.\n"
+    "You can get an api key at http://acoustid.org/\n"
+    "You can also set the AID_API_KEY enviroment variable."
+    "\n> "
+)
 
 
 def aidmatch(filename):
@@ -51,4 +54,8 @@ def aidmatch(filename):
 
 
 if __name__ == "__main__":
+    if len(sys.argv) < 2:
+        print("Usage: aidmatch.py <path>")
+        sys.exit(1)
+
     aidmatch(sys.argv[1])

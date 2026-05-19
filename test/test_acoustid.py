@@ -113,12 +113,11 @@ class TestFingerprintComparison:
             DummyChromaprint({b"a": [0, 0], b"b": [255, 255]}),
             raising=False,
         )
-        monkeypatch.setattr(acoustid, "have_chromaprint", True)
         result = acoustid.compare_fingerprints((0, a_fp), (0, b_fp))
         assert result == expected
 
     def test_compare_fingerprints_requires_chromaprint(self, monkeypatch):
-        monkeypatch.setattr(acoustid, "have_chromaprint", False)
+        monkeypatch.setattr(acoustid, "chromaprint", None)
         with pytest.raises(ModuleNotFoundError):
             acoustid.compare_fingerprints((0, b"a"), (0, b"a"))
 
@@ -276,7 +275,9 @@ class TestFingerprinting:
         data = bytes(range(100))  # b'\x00\x01\x02...\x63'
 
         monkeypatch.setattr("chromaprint.Fingerprinter.start", Mock())
-        monkeypatch.setattr("chromaprint.Fingerprinter.finish", Mock())
+        monkeypatch.setattr(
+            "chromaprint.Fingerprinter.finish", Mock(return_value=b"fake")
+        )
 
         values = []
         for b in block_sizes:

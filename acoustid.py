@@ -12,30 +12,45 @@
 # The above copyright notice and this permission notice shall be
 # included in all copies or substantial portions of the Software.
 
+from __future__ import annotations
+
 import contextlib
 import errno
+import gzip
 import json
 import os
+import subprocess
+import threading
+import time
+from collections.abc import (  # noqa: TC003 # Iterable needed because isinstance()
+    Iterable,
+    Iterator,
+)
+from io import BytesIO
+from typing import TYPE_CHECKING, Any, SupportsIndex
 
 import requests
+from requests.adapters import HTTPAdapter
+
+if TYPE_CHECKING:
+    from _typeshed import ReadableBuffer
+
+
+chromaprint, audioread = None, None
+
+# For both of these guards, ImportError is raised if a library fails to load.
 
 try:
     import audioread
 
-    have_audioread = True
 except ImportError:
-    have_audioread = False
+    ...
+
 try:
     import chromaprint
 
-    have_chromaprint = True
 except ImportError:
-    have_chromaprint = False
-import gzip
-import subprocess
-import threading
-import time
-from io import BytesIO
+    ...
 
 API_BASE_URL = "http://api.acoustid.org/v2/"
 DEFAULT_META = ["recordings"]
@@ -46,6 +61,8 @@ FPCALC_ENVVAR = "FPCALC"
 MAX_BIT_ERROR = 2  # comparison settings
 MAX_ALIGN_OFFSET = 120
 
+requests_timeout_type = float | tuple[float, float] | None
+file_fingerprint_result = tuple[float, bytes]
 
 # Exceptions.
 
@@ -75,7 +92,7 @@ class WebServiceError(AcoustidError):
     acoustid error code.
     """
 
-    def __init__(self, message, response=None):
+    def __init__(self, message: str, response: str | bytes | None = None):
         """Create an error for the given HTTP response body, if
         provided, with the ``message`` as a fallback.
         """
@@ -100,7 +117,7 @@ class WebServiceError(AcoustidError):
 # Endpoint configuration.
 
 
-def set_base_url(url):
+def set_base_url(url: str):
     """Set the URL of the API server to query."""
     if not url.endswith("/"):
         url += "/"
@@ -108,17 +125,17 @@ def set_base_url(url):
     API_BASE_URL = url
 
 
-def _get_lookup_url():
+def _get_lookup_url() -> str:
     """Get the URL of the lookup API endpoint."""
     return API_BASE_URL + "lookup"
 
 
-def _get_submit_url():
+def _get_submit_url() -> str:
     """Get the URL of the submission API endpoint."""
     return API_BASE_URL + "submit"
 
 
-def _get_submission_status_url():
+def _get_submission_status_url() -> str:
     """Get the URL of the submission status API endpoint."""
     return API_BASE_URL + "submission_status"
 
@@ -126,7 +143,7 @@ def _get_submission_status_url():
 # Compressed HTTP request bodies.
 
 
-def _compress(data):
+def _compress(data: ReadableBuffer):
     """Compress a bytestring to a gzip archive."""
     sio = BytesIO()
     with contextlib.closing(gzip.GzipFile(fileobj=sio, mode="wb")) as f:
@@ -134,7 +151,7 @@ def _compress(data):
     return sio.getvalue()
 
 
-class CompressedHTTPAdapter(requests.adapters.HTTPAdapter):
+class CompressedHTTPAdapter(HTTPAdapter):
     """An `HTTPAdapter` that compresses request bodies with gzip. The
     Content-Encoding header is set accordingly.
     """
@@ -177,7 +194,7 @@ class _rate_limit:  # noqa: N801
 
 
 @_rate_limit
-def _api_request(url, params, timeout=None):
+def _api_request(url: str, params: dict, timeout: requests_timeout_type = None) -> Any:
     """Makes a POST request for the URL with the given form parameters,
     which are encoded as compressed form data, and returns a parsed JSON
     response. May raise a WebServiceError if the request fails.
@@ -194,10 +211,10 @@ def _api_request(url, params, timeout=None):
             if isinstance(params.get("meta"), list):
                 params["meta"] = " ".join(params["meta"])
             response = session.post(url, data=params, headers=headers, timeout=timeout)
-        except requests.exceptions.RequestException as exc:
-            raise WebServiceError(f"HTTP request failed: {exc}")
         except requests.exceptions.ReadTimeout:
             raise WebServiceError(f"HTTP request timed out ({timeout}s)")
+        except requests.exceptions.RequestException as exc:
+            raise WebServiceError(f"HTTP request failed: {exc}")
 
     try:
         return response.json()
@@ -208,14 +225,25 @@ def _api_request(url, params, timeout=None):
 # Main API.
 
 
-def fingerprint(samplerate, channels, pcmiter, maxlength=MAX_AUDIO_LENGTH):
+def fingerprint(
+    samplerate: int,
+    channels: int,
+    pcmiter: Iterator[bytes] | Iterable[bytes],
+    maxlength: float = MAX_AUDIO_LENGTH,
+) -> bytes:
     """Fingerprint audio data given its sample rate and number of
-    channels.  pcmiter should be an iterable containing blocks of PCM
-    data as byte strings. Raises a FingerprintGenerationError if
-    anything goes wrong.
+    channels. pcmiter should be an iterator containing blocks of PCM
+    data as byte strings. maxlength is in seconds. Raises a FingerprintGenerationError
+    if anything goes wrong.
     """
+    if chromaprint is None:
+        raise ModuleNotFoundError("function needs chromaprint")
+
+    if not isinstance(pcmiter, Iterator):
+        pcmiter = iter(pcmiter)
+
     # Maximum number of samples to decode.
-    endposition = samplerate * channels * maxlength
+    endposition = int(samplerate * channels * maxlength)
 
     try:
         fper = chromaprint.Fingerprinter()
@@ -236,12 +264,21 @@ def fingerprint(samplerate, channels, pcmiter, maxlength=MAX_AUDIO_LENGTH):
             fper.feed(block[:bytes_to_feed])
             position += bytes_to_feed // 2
 
-        return fper.finish()
+        result = fper.finish()
+        if not isinstance(result, bytes):
+            raise FingerprintGenerationError("fingerprint somehow ended up as None")
+        return result
     except chromaprint.FingerprintError:
         raise FingerprintGenerationError("fingerprint calculation failed")
 
 
-def lookup(apikey, fingerprint, duration, meta=DEFAULT_META, timeout=None):
+def lookup(
+    apikey: str,
+    fingerprint: bytes,
+    duration: int,
+    meta: list[str] = DEFAULT_META,
+    timeout: requests_timeout_type = None,
+):
     """Look up a fingerprint with the Acoustid Web service. Returns the
     Python object reflecting the response JSON data. To get more data
     back, ``meta`` can be a list of keywords from this list: recordings,
@@ -258,7 +295,7 @@ def lookup(apikey, fingerprint, duration, meta=DEFAULT_META, timeout=None):
     return _api_request(_get_lookup_url(), params, timeout)
 
 
-def parse_lookup_result(data):
+def parse_lookup_result(data: dict[str, Any]):
     """Given a parsed JSON response, generate tuples containing the match
     score, the MusicBrainz recording ID, the title of the recording, and
     the artist name of the recording. Multiple artist names are joined
@@ -293,8 +330,10 @@ def parse_lookup_result(data):
             yield score, recording["id"], recording.get("title"), artist_name
 
 
-def _fingerprint_file_audioread(path, maxlength):
+def _fingerprint_file_audioread(path: str, maxlength: float):
     """Fingerprint a file by using audioread and chromaprint."""
+    if audioread is None:
+        raise ModuleNotFoundError("function requires audioread")
     try:
         with audioread.audio_open(path) as f:
             duration = f.duration
@@ -304,7 +343,7 @@ def _fingerprint_file_audioread(path, maxlength):
     return duration, fp
 
 
-def _fingerprint_file_fpcalc(path, maxlength):
+def _fingerprint_file_fpcalc(path: str, maxlength: float):
     """Fingerprint a file by calling the fpcalc application."""
     fpcalc = os.environ.get(FPCALC_ENVVAR, FPCALC_COMMAND)
     command = [fpcalc, "-length", str(maxlength), path]
@@ -340,20 +379,22 @@ def _fingerprint_file_fpcalc(path, maxlength):
     return duration, fp
 
 
-def fingerprint_file(path, maxlength=MAX_AUDIO_LENGTH, force_fpcalc=False):
+def fingerprint_file(
+    path: str, maxlength: float = MAX_AUDIO_LENGTH, force_fpcalc: bool = False
+) -> file_fingerprint_result:
     """Fingerprint a file either using the Chromaprint dynamic library
     or the fpcalc command-line tool, whichever is available (unless
-    ``force_fpcalc`` is specified). Returns the duration and the
-    fingerprint.
+    ``force_fpcalc`` is specified). maxlength is in seconds.
+    Returns the duration and the fingerprint.
     """
-    path = os.path.abspath(os.path.expanduser(path))
-    if have_audioread and have_chromaprint and not force_fpcalc:
+    path = str(os.path.abspath(os.path.expanduser(path)))
+    if audioread is not None and chromaprint is not None and not force_fpcalc:
         return _fingerprint_file_audioread(path, maxlength)
     else:
         return _fingerprint_file_fpcalc(path, maxlength)
 
 
-def _popcount(x) -> int:
+def _popcount(x: SupportsIndex) -> int:
     """count 1s in binary encoding of x"""
     return bin(x).count("1")
 
@@ -385,24 +426,31 @@ def _match_fingerprints(a: list[int], b: list[int]) -> float:
     return topcount / min(asize, bsize)
 
 
-def compare_fingerprints(a, b) -> float:
+def compare_fingerprints(
+    a: file_fingerprint_result, b: file_fingerprint_result
+) -> float:
     """Compare two fingerprints produced by `fingerprint_file`.
 
     :param a: A pair produced by `fingerprint_file`.
     :param b: A second such pair.
     :return:  similarity score [0,1]
     """
-    if not have_chromaprint:
+    if chromaprint is None:
         raise ModuleNotFoundError("function needs chromaprint")
 
     # decompress fingerprints
-    a = [int(x) for x in chromaprint.decode_fingerprint(a[1])[0]]
-    b = [int(x) for x in chromaprint.decode_fingerprint(b[1])[0]]
-    return _match_fingerprints(a, b)
+    decoded_a = [int(x) for x in chromaprint.decode_fingerprint(a[1])[0]]
+    decoded_b = [int(x) for x in chromaprint.decode_fingerprint(b[1])[0]]
+    return _match_fingerprints(decoded_a, decoded_b)
 
 
 def match(
-    apikey, path, meta=DEFAULT_META, parse=True, force_fpcalc=False, timeout=None
+    apikey: str,
+    path: str,
+    meta: list[str] = DEFAULT_META,
+    parse: bool = True,
+    force_fpcalc: bool = False,
+    timeout: requests_timeout_type = None,
 ):
     """Look up the metadata for an audio file. If ``parse`` is true,
     then ``parse_lookup_result`` is used to return an iterator over
@@ -415,14 +463,19 @@ def match(
     compress, usermeta, sources.
     """
     duration, fp = fingerprint_file(path, force_fpcalc=force_fpcalc)
-    response = lookup(apikey, fp, duration, meta, timeout)
+    response = lookup(apikey, fp, int(duration), meta, timeout)
     if parse:
         return parse_lookup_result(response)
     else:
         return response
 
 
-def submit(apikey, userkey, data, timeout=None):
+def submit(
+    apikey: str,
+    userkey: str,
+    data: dict[str, Any] | list[dict[str, Any]],
+    timeout: requests_timeout_type = None,
+):
     """Submit a fingerprint to the acoustid server. The ``apikey`` and
     ``userkey`` parameters are API keys for the application and the
     submitting user, respectively.
@@ -471,7 +524,9 @@ def submit(apikey, userkey, data, timeout=None):
     return response
 
 
-def get_submission_status(apikey, submission_id, timeout=None):
+def get_submission_status(
+    apikey: str, submission_id: str, timeout: requests_timeout_type = None
+):
     """Get the status of a submission to the acoustid server.
     ``submission_id`` is the id of a fingerprint submission, as returned
     in the response object of a call to the ``submit`` endpoint.

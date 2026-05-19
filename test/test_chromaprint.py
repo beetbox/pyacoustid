@@ -78,6 +78,8 @@ def chromaprint_context(monkeypatch):
     dummy = DummyLib()
     monkeypatch.setattr("ctypes.CDLL", lambda *args, **kwargs: dummy)
     spec = importlib.util.spec_from_file_location("chromaprint_under_test", module_path)
+    assert spec
+    assert spec.loader
     module = importlib.util.module_from_spec(spec)
     spec.loader.exec_module(module)
     return module, dummy

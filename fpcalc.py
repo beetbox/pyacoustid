@@ -45,7 +45,7 @@ def main():
     del sys.argv[1:]
 
     first = True
-    for i, path in enumerate(args.paths):
+    for _, path in enumerate(args.paths):
         try:
             duration, fp = acoustid.fingerprint_file(path, args.length)
         except Exception:

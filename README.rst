@@ -107,6 +107,9 @@ used when the Chromaprint library or fpcalc command-line tool cannot be found.
 
 Version History
 ---------------
+1.4.0
+  Added type hints to the majority of the functions, and added a gitignore.
+  Minor internal breaking changes.
 
 1.3.0
   Multiple artists are joined by join phrases, as displayed on the web page.

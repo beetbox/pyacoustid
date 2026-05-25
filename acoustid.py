@@ -17,6 +17,10 @@ import errno
 import json
 import os
 
+import sys
+if sys.byteorder == 'big':
+    import struct
+
 import requests
 
 try:
@@ -207,6 +211,17 @@ def _api_request(url, params, timeout=None):
 
 # Main API.
 
+def byteswap(s):
+    """Swaps the endianness of the bytestring s, which must be an array
+    of shorts (16-bit signed integers).
+    """
+    assert len(s) % 2 == 0
+    parts = []
+    for i in range(0, len(s), 2):
+        chunk = s[i:i + 2]
+        newchunk = struct.pack('>h', *struct.unpack('<h', chunk))
+        parts.append(newchunk)
+    return b''.join(parts)
 
 def fingerprint(samplerate, channels, pcmiter, maxlength=MAX_AUDIO_LENGTH):
     """Fingerprint audio data given its sample rate and number of
@@ -228,6 +243,11 @@ def fingerprint(samplerate, channels, pcmiter, maxlength=MAX_AUDIO_LENGTH):
             except StopIteration:
                 # No more data
                 break
+
+            # On big-endian machines, audioread reads in s16le format
+            # which needs to be byteswapped for chromaprint
+            if sys.byteorder == 'big':
+                block = byteswap(block)
 
             # Calculate remaining samples needed
             remaining = endposition - position

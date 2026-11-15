@@ -72,6 +72,19 @@ iterable over tuples of relevant information. Everything happens in one fell
 swoop. There are also a number of "smaller" functions you can use to perform
 parts of the process:
 
+To load the Chromaprint shared library from a specific location instead of
+using automatic system-wide discovery, pass its path to ``acoustid.loader`` functon as initializer :
+
+.. code-block:: python
+
+    >>> import acoustid
+    >>> acoustid.loader("/path/to/libchromaprint.so")
+
+The path can also be a ``pathlib.Path`` object. If the explicit path cannot be loaded
+or does not contain Chromaprint, ``acoustid.loader`` raises ``ImportError`` and does not
+fall back to system-wide discovery. Without an explicit call, pyacoustid
+continues to search for the library automatically using system-wide discovery.
+
 - ``fingerprint(samplerate, channels, pcmiter)``: Generate a fingerprint for raw
   audio data. Specify the audio parameters and give an iterable containing
   blocks of PCM data.

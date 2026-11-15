@@ -6,6 +6,7 @@
 
 import ctypes
 import ctypes.util
+import os
 import sys
 
 BUFFER_TYPES = (memoryview, bytearray)
@@ -43,75 +44,109 @@ def _load_library(name):
         return None
 
 
+def _configure_library(lib):
+    lib.chromaprint_get_version.argtypes = ()
+    lib.chromaprint_get_version.restype = ctypes.c_char_p
+
+    lib.chromaprint_new.argtypes = (ctypes.c_int,)
+    lib.chromaprint_new.restype = ctypes.c_void_p
+
+    lib.chromaprint_free.argtypes = (ctypes.c_void_p,)
+    lib.chromaprint_free.restype = None
+
+    lib.chromaprint_start.argtypes = (ctypes.c_void_p, ctypes.c_int, ctypes.c_int)
+    lib.chromaprint_start.restype = ctypes.c_int
+
+    lib.chromaprint_feed.argtypes = (
+        ctypes.c_void_p,
+        ctypes.POINTER(ctypes.c_char),
+        ctypes.c_int,
+    )
+    lib.chromaprint_feed.restype = ctypes.c_int
+
+    lib.chromaprint_finish.argtypes = (ctypes.c_void_p,)
+    lib.chromaprint_finish.restype = ctypes.c_int
+
+    lib.chromaprint_get_fingerprint.argtypes = (
+        ctypes.c_void_p,
+        ctypes.POINTER(ctypes.c_char_p),
+    )
+    lib.chromaprint_get_fingerprint.restype = ctypes.c_int
+
+    lib.chromaprint_decode_fingerprint.argtypes = (
+        ctypes.POINTER(ctypes.c_char),
+        ctypes.c_int,
+        ctypes.POINTER(ctypes.POINTER(ctypes.c_uint32)),
+        ctypes.POINTER(ctypes.c_int),
+        ctypes.POINTER(ctypes.c_int),
+        ctypes.c_int,
+    )
+    lib.chromaprint_decode_fingerprint.restype = ctypes.c_int
+
+    lib.chromaprint_encode_fingerprint.argtypes = (
+        ctypes.POINTER(ctypes.c_int32),
+        ctypes.c_int,
+        ctypes.c_int,
+        ctypes.POINTER(ctypes.POINTER(ctypes.c_char)),
+        ctypes.POINTER(ctypes.c_int),
+        ctypes.c_int,
+    )
+    lib.chromaprint_encode_fingerprint.restype = ctypes.c_int
+
+    lib.chromaprint_hash_fingerprint.argtypes = (
+        ctypes.POINTER(ctypes.c_int32),
+        ctypes.c_int,
+        ctypes.POINTER(ctypes.c_uint32),
+    )
+    lib.chromaprint_hash_fingerprint.restype = ctypes.c_int
+
+    lib.chromaprint_dealloc.argtypes = (ctypes.c_void_p,)
+    lib.chromaprint_dealloc.restype = None
+
+
+_libchromaprint = None
 for name in _guess_lib_name():
     _libchromaprint = _load_library(name)
     if _libchromaprint:
+        _configure_library(_libchromaprint)
         break
-else:
-    raise ImportError("couldn't find libchromaprint")
 
 
-_libchromaprint.chromaprint_get_version.argtypes = ()
-_libchromaprint.chromaprint_get_version.restype = ctypes.c_char_p
+def loader(path):
+    """Load Chromaprint from an explicit shared-library path.
 
-_libchromaprint.chromaprint_new.argtypes = (ctypes.c_int,)
-_libchromaprint.chromaprint_new.restype = ctypes.c_void_p
+    Unlike automatic library discovery, this uses only the supplied path.
+    """
+    global _libchromaprint
 
-_libchromaprint.chromaprint_free.argtypes = (ctypes.c_void_p,)
-_libchromaprint.chromaprint_free.restype = None
+    path = os.fspath(path)
+    if not isinstance(path, str):
+        raise TypeError(
+            "path must be a string or a path-like object returning a string"
+        )
+    if not path:
+        raise ValueError("path must not be empty")
 
-_libchromaprint.chromaprint_start.argtypes = (
-    ctypes.c_void_p,
-    ctypes.c_int,
-    ctypes.c_int,
-)
-_libchromaprint.chromaprint_start.restype = ctypes.c_int
+    try:
+        lib = ctypes.CDLL(path)
+    except OSError as exc:
+        raise ImportError(f"couldn't load libchromaprint from {path}") from exc
 
-_libchromaprint.chromaprint_feed.argtypes = (
-    ctypes.c_void_p,
-    ctypes.POINTER(ctypes.c_char),
-    ctypes.c_int,
-)
-_libchromaprint.chromaprint_feed.restype = ctypes.c_int
+    try:
+        _configure_library(lib)
+    except AttributeError as exc:
+        raise ImportError(f"{path} is not a valid libchromaprint library") from exc
 
-_libchromaprint.chromaprint_finish.argtypes = (ctypes.c_void_p,)
-_libchromaprint.chromaprint_finish.restype = ctypes.c_int
+    _libchromaprint = lib
+    return lib
 
-_libchromaprint.chromaprint_get_fingerprint.argtypes = (
-    ctypes.c_void_p,
-    ctypes.POINTER(ctypes.c_char_p),
-)
-_libchromaprint.chromaprint_get_fingerprint.restype = ctypes.c_int
 
-_libchromaprint.chromaprint_decode_fingerprint.argtypes = (
-    ctypes.POINTER(ctypes.c_char),
-    ctypes.c_int,
-    ctypes.POINTER(ctypes.POINTER(ctypes.c_uint32)),
-    ctypes.POINTER(ctypes.c_int),
-    ctypes.POINTER(ctypes.c_int),
-    ctypes.c_int,
-)
-_libchromaprint.chromaprint_decode_fingerprint.restype = ctypes.c_int
-
-_libchromaprint.chromaprint_encode_fingerprint.argtypes = (
-    ctypes.POINTER(ctypes.c_int32),
-    ctypes.c_int,
-    ctypes.c_int,
-    ctypes.POINTER(ctypes.POINTER(ctypes.c_char)),
-    ctypes.POINTER(ctypes.c_int),
-    ctypes.c_int,
-)
-_libchromaprint.chromaprint_encode_fingerprint.restype = ctypes.c_int
-
-_libchromaprint.chromaprint_hash_fingerprint.argtypes = (
-    ctypes.POINTER(ctypes.c_int32),
-    ctypes.c_int,
-    ctypes.POINTER(ctypes.c_uint32),
-)
-_libchromaprint.chromaprint_hash_fingerprint.restype = ctypes.c_int
-
-_libchromaprint.chromaprint_dealloc.argtypes = (ctypes.c_void_p,)
-_libchromaprint.chromaprint_dealloc.restype = None
+def _require_library():
+    if _libchromaprint is None:
+        raise ImportError(
+            "couldn't find libchromaprint; use loader(path) to load it explicitly"
+        )
+    return _libchromaprint
 
 
 # Main interface.
@@ -136,15 +171,18 @@ class Fingerprinter:
     ALGORITHM_DEFAULT = ALGORITHM_TEST2
 
     def __init__(self, algorithm=ALGORITHM_DEFAULT):
-        self._ctx = _libchromaprint.chromaprint_new(algorithm)
+        self._ctx = _require_library().chromaprint_new(algorithm)
 
     def __del__(self):
-        _libchromaprint.chromaprint_free(self._ctx)
-        del self._ctx
+        if hasattr(self, "_ctx"):
+            _require_library().chromaprint_free(self._ctx)
+            del self._ctx
 
     def start(self, sample_rate, num_channels):
         """Initialize the fingerprinter with the given audio parameters."""
-        _check(_libchromaprint.chromaprint_start(self._ctx, sample_rate, num_channels))
+        _check(
+            _require_library().chromaprint_start(self._ctx, sample_rate, num_channels)
+        )
 
     def feed(self, data):
         """Send raw PCM audio data to the fingerprinter. Data may be
@@ -154,21 +192,20 @@ class Fingerprinter:
             data = bytes(data)
         elif not isinstance(data, bytes):
             raise TypeError("data must be bytes, buffer, or memoryview")
-        _check(_libchromaprint.chromaprint_feed(self._ctx, data, len(data) // 2))
+        _check(_require_library().chromaprint_feed(self._ctx, data, len(data) // 2))
 
     def finish(self):
         """Finish the fingerprint generation process and retrieve the
         resulting fignerprint as a bytestring.
         """
-        _check(_libchromaprint.chromaprint_finish(self._ctx))
+        lib = _require_library()
+        _check(lib.chromaprint_finish(self._ctx))
         fingerprint_ptr = ctypes.c_char_p()
         _check(
-            _libchromaprint.chromaprint_get_fingerprint(
-                self._ctx, ctypes.byref(fingerprint_ptr)
-            )
+            lib.chromaprint_get_fingerprint(self._ctx, ctypes.byref(fingerprint_ptr))
         )
         fingerprint = fingerprint_ptr.value
-        _libchromaprint.chromaprint_dealloc(fingerprint_ptr)
+        lib.chromaprint_dealloc(fingerprint_ptr)
         return fingerprint
 
 
@@ -187,8 +224,9 @@ def decode_fingerprint(data, base64=True):
     result_ptr = ctypes.POINTER(ctypes.c_uint32)()
     result_size = ctypes.c_int()
     algorithm = ctypes.c_int()
+    lib = _require_library()
     _check(
-        _libchromaprint.chromaprint_decode_fingerprint(
+        lib.chromaprint_decode_fingerprint(
             data,
             len(data),
             ctypes.byref(result_ptr),
@@ -198,7 +236,7 @@ def decode_fingerprint(data, base64=True):
         )
     )
     result = result_ptr[: result_size.value]
-    _libchromaprint.chromaprint_dealloc(result_ptr)
+    lib.chromaprint_dealloc(result_ptr)
     return result, algorithm.value
 
 
@@ -218,8 +256,9 @@ def encode_fingerprint(fingerprint, algorithm, base64=True):
         fp_array[i] = fingerprint[i]
     result_ptr = ctypes.POINTER(ctypes.c_char)()
     result_size = ctypes.c_int()
+    lib = _require_library()
     _check(
-        _libchromaprint.chromaprint_encode_fingerprint(
+        lib.chromaprint_encode_fingerprint(
             fp_array,
             len(fingerprint),
             algorithm,
@@ -229,7 +268,7 @@ def encode_fingerprint(fingerprint, algorithm, base64=True):
         )
     )
     result = result_ptr[: result_size.value]
-    _libchromaprint.chromaprint_dealloc(result_ptr)
+    lib.chromaprint_dealloc(result_ptr)
     return result
 
 
@@ -270,8 +309,9 @@ def hash_fingerprint(fingerprint):
     for i in range(len(fingerprint)):
         fp_array[i] = fingerprint[i]
     result_hash = ctypes.c_uint32()
+    lib = _require_library()
     _check(
-        _libchromaprint.chromaprint_hash_fingerprint(
+        lib.chromaprint_hash_fingerprint(
             fp_array, len(fingerprint), ctypes.byref(result_hash)
         )
     )

@@ -76,6 +76,7 @@ class DummyLib:
 def chromaprint_context(monkeypatch):
     module_path = Path(__file__).resolve().parents[1] / "chromaprint.py"
     dummy = DummyLib()
+    monkeypatch.setattr("ctypes.util.find_library", lambda name: name)
     monkeypatch.setattr("ctypes.CDLL", lambda *args, **kwargs: dummy)
     spec = importlib.util.spec_from_file_location("chromaprint_under_test", module_path)
     module = importlib.util.module_from_spec(spec)
@@ -101,6 +102,25 @@ class TestLibraryHints:
         assert isinstance(candidates, tuple)
         assert candidates
         assert all(isinstance(item, str) for item in candidates)
+
+    def test_loader_initializes_library(
+        self, chromaprint_module, chromaprint_dummy, monkeypatch
+    ):
+        loaded_paths = []
+
+        def load_library(path):
+            loaded_paths.append(path)
+            return chromaprint_dummy
+
+        monkeypatch.setattr(chromaprint_module.ctypes, "CDLL", load_library)
+        monkeypatch.setattr(chromaprint_module, "_libchromaprint", None)
+
+        library = chromaprint_module.loader("custom-library")
+
+        assert loaded_paths == ["custom-library"]
+        assert library is chromaprint_dummy
+        assert chromaprint_module._require_library() is library
+        assert chromaprint_module.Fingerprinter().finish() == b"fp"
 
     def test_buffer_types_include_bytes_views(self, chromaprint_module):
         assert memoryview in chromaprint_module.BUFFER_TYPES

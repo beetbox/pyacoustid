@@ -37,7 +37,7 @@ import threading
 import time
 from io import BytesIO
 
-API_BASE_URL = "http://api.acoustid.org/v2/"
+API_BASE_URL = "https://api.acoustid.org/v2/"
 DEFAULT_META = ["recordings"]
 REQUEST_INTERVAL = 0.33  # 3 requests/second.
 MAX_AUDIO_LENGTH = 120  # Seconds.
@@ -190,6 +190,7 @@ def _api_request(url, params, timeout=None):
 
     with requests.Session() as session:
         session.mount("http://", CompressedHTTPAdapter())
+        session.mount("https://", CompressedHTTPAdapter())
         try:
             if isinstance(params.get("meta"), list):
                 params["meta"] = " ".join(params["meta"])
@@ -241,12 +242,15 @@ def fingerprint(samplerate, channels, pcmiter, maxlength=MAX_AUDIO_LENGTH):
         raise FingerprintGenerationError("fingerprint calculation failed")
 
 
-def lookup(apikey, fingerprint, duration, meta=DEFAULT_META, timeout=None):
+def lookup(
+    apikey, fingerprint, duration, meta=DEFAULT_META, timeout=None, *, userkey=None
+):
     """Look up a fingerprint with the Acoustid Web service. Returns the
     Python object reflecting the response JSON data. To get more data
     back, ``meta`` can be a list of keywords from this list: recordings,
     recordingids, releases, releaseids, releasegroups, releasegroupids,
-    tracks, compress, usermeta, sources.
+    tracks, compress, usermeta, sources. Pass the user's API key as
+    ``userkey`` alongside the application's ``apikey``.
     """
     params = {
         "format": "json",
@@ -255,6 +259,8 @@ def lookup(apikey, fingerprint, duration, meta=DEFAULT_META, timeout=None):
         "fingerprint": fingerprint,
         "meta": meta,
     }
+    if userkey is not None:
+        params["user"] = userkey
     return _api_request(_get_lookup_url(), params, timeout)
 
 
@@ -402,7 +408,14 @@ def compare_fingerprints(a, b) -> float:
 
 
 def match(
-    apikey, path, meta=DEFAULT_META, parse=True, force_fpcalc=False, timeout=None
+    apikey,
+    path,
+    meta=DEFAULT_META,
+    parse=True,
+    force_fpcalc=False,
+    timeout=None,
+    *,
+    userkey=None,
 ):
     """Look up the metadata for an audio file. If ``parse`` is true,
     then ``parse_lookup_result`` is used to return an iterator over
@@ -412,10 +425,11 @@ def match(
     true, only the latter will be used. To get more data back, ``meta``
     can be a list of keywords from this list: recordings, recordingids,
     releases, releaseids, releasegroups, releasegroupids, tracks,
-    compress, usermeta, sources.
+    compress, usermeta, sources. Pass the user's API key as
+    ``userkey`` alongside the application's ``apikey``.
     """
     duration, fp = fingerprint_file(path, force_fpcalc=force_fpcalc)
-    response = lookup(apikey, fp, duration, meta, timeout)
+    response = lookup(apikey, fp, duration, meta, timeout, userkey=userkey)
     if parse:
         return parse_lookup_result(response)
     else:

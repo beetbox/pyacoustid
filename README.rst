@@ -63,8 +63,15 @@ The simplest way to use pyacoustid to identify audio files is to call the
 .. code-block:: python
 
     >>> import acoustid
-    >>> for score, recording_id, title, artist in acoustid.match(apikey, path):
+    >>> for score, recording_id, title, artist in acoustid.match(
+    ...     apikey, path, userkey=userkey
+    ... ):
     >>>     ...
+
+Use your registered application key for ``apikey`` and the user's
+`personal Acoustid API key`_ for ``userkey``. Starting January 1, 2027, the
+public Acoustid service requires both keys for lookups by applications
+registered on acoustid.org.
 
 This convenience function uses `audioread`_ to decode audio and parses the
 response for you, pulling out the most important track metadata. It returns in
@@ -79,10 +86,9 @@ parts of the process:
   the ``fpcalc`` command-line tool, fingerprint an audio file. (You can use
   ``force_fpcalc`` to use only the latter.) Returns a pair consisting of the
   file's duration and its fingerprint.
-- ``lookup(apikey, fingerprint, duration)``: Make a request to the `Acoustid`_
-  API to look up the fingerprint returned by the previous function. An API key
-  is required, as is the length, in seconds, of the source audio. Returns a
-  parsed JSON response.
+- ``lookup(apikey, fingerprint, duration, userkey=userkey)``: Look up the
+  fingerprint. The duration is the length of the source audio in seconds.
+  Returns a parsed JSON response.
 - ``parse_lookup_result(data)``: Given a parsed JSON response, return an
   iterator over tuples containing the match score (a float between 0 and 1), the
   MusicBrainz recording ID, title, and artist name for each match.
@@ -94,7 +100,8 @@ second whenever the Web API is called, in accordance with the `Web service
 documentation`_.
 
 If you're running your own Acoustid database server, you can set the base URL
-for all API calls with the ``set_base_url`` function.
+for all API calls with the ``set_base_url`` function. Use HTTPS when sending
+API keys.
 
 Calls to the library can raise ``AcoustidError`` exceptions of two subtypes:
 ``FingerprintGenerationError`` and ``WebServiceError``. Catch these exceptions
@@ -103,10 +110,15 @@ server. ``NoBackendError``, a subclass of ``FingerprintGenerationError``, is
 used when the Chromaprint library or fpcalc command-line tool cannot be found.
 
 .. _Web service documentation: http://acoustid.org/webservice
+.. _personal Acoustid API key: https://acoustid.org/api-key
 
 
 Version History
 ---------------
+
+Unreleased
+  Pass a user API key to ``lookup`` and ``match`` with the ``userkey`` keyword.
+  Use HTTPS for the default Acoustid endpoint.
 
 1.3.0
   Multiple artists are joined by join phrases, as displayed on the web page.
